@@ -158,6 +158,8 @@
           showError('Too many attempts. Please wait a moment and try again.');
         } else if (code.includes('network')) {
           showError('Network unavailable. Check your connection and try again.');
+        } else if (code.includes('configuration-not-found') || code.includes('operation-not-allowed')) {
+          showError('Sign-in is not enabled on the parish Firebase project yet. Enable Email/Password in the Firebase console, then try again.');
         } else {
           showError(err.message || 'Sign in failed. Please try again.');
         }
@@ -187,7 +189,7 @@
         link.textContent = settings.officeEmail;
         link.href = `mailto:${settings.officeEmail}`;
       }
-    });
+    }).catch(() => {});
 
     redirectIfSignedIn();
   </script>

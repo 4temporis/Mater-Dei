@@ -73,7 +73,7 @@ hard-coded sample content in the UI.
 
 ```powershell
 npm run build:web
-npx serve stitch_mater_dei_pastoral_tracker
+npm run serve
 ```
 
 Then open <http://localhost:3000/login.html>.

@@ -136,6 +136,8 @@
           showError('That email address does not look valid.');
         } else if (err?.code === 'permission-denied' || message.includes('Missing or insufficient permissions')) {
           showError('That invitation code is not valid. Please check the code with the parish office.');
+        } else if (err?.code === 'auth/configuration-not-found' || err?.code === 'auth/operation-not-allowed') {
+          showError('Sign-up is not enabled on the parish Firebase project yet. Enable Email/Password in the Firebase console, then try again.');
         } else {
           showError(message || 'Could not create your account. Please try again.');
         }
