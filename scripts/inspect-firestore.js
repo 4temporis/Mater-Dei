@@ -30,9 +30,15 @@ async function main() {
     });
   }
 
-  const users = await auth.listUsers(1000);
-  console.log(`\nAuth users: ${users.users.length}`);
-  users.users.forEach((u) => console.log(`  - ${u.email || u.uid} (${u.uid})`));
+  try {
+    const users = await auth.listUsers(1000);
+    console.log(`\nAuth users: ${users.users.length}`);
+    users.users.forEach((u) => console.log(`  - ${u.email || u.uid} (${u.uid})`));
+  } catch (err) {
+    console.log('\nAuth users: unavailable');
+    console.log(`  ${err.message}`);
+    console.log('  Enable Authentication → Sign-in method → Email/Password in the Firebase console.');
+  }
 }
 
 main().catch((err) => {
