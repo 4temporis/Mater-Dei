@@ -66,8 +66,8 @@ hard-coded sample content in the UI.
    ```
 
    The script prints the email and temporary password. The default email is
-   `mater-deimaterdei.parowvalley@gmail.com`. Pass `--email` / `--password` to
-   override, or set `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+   `materdei.parowvalley@gmail.com`. Pass `--email` / `--password` to override,
+   or set `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ## Running locally
 

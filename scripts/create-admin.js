@@ -33,7 +33,7 @@ function generatePassword() {
   return `MaterDei-${base}9!`;
 }
 
-const EMAIL = (readArg('email') || process.env.ADMIN_EMAIL || 'mater-deimaterdei.parowvalley@gmail.com').trim().toLowerCase();
+const EMAIL = (readArg('email') || process.env.ADMIN_EMAIL || 'materdei.parowvalley@gmail.com').trim().toLowerCase();
 const PASSWORD = readArg('password') || process.env.ADMIN_PASSWORD || generatePassword();
 const DISPLAY_NAME = readArg('name') || 'Parish Admin';
 
