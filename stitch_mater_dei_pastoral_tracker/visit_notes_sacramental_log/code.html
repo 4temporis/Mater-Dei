@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b365d" />
+  <title>Pastoral Visit Log — Mater Dei Pastoral Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/tailwind.css" />
+</head>
+<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased pb-10">
+  <header class="sticky top-0 z-40 bg-white border-b border-parchment-outline shadow-sm">
+    <div class="max-w-xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <button id="btnBack" aria-label="Go back" class="w-9 h-9 rounded-full text-primary hover:bg-surface-container flex items-center justify-center">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="min-w-0">
+          <h1 class="font-serif text-sm font-bold text-primary leading-tight truncate">Pastoral Visit Log</h1>
+          <p class="text-[11px] text-secondary leading-tight truncate">Mater Dei Pastoral Care</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-semibold text-on-surface-variant bg-parchment-container px-2 py-1 rounded-full whitespace-nowrap" id="logTime">–</span>
+    </div>
+  </header>
+
+  <section class="bg-white border-b border-parchment-outline">
+    <div class="max-w-xl mx-auto px-4 py-3">
+      <div class="flex items-center gap-1.5 text-secondary">
+        <span class="material-symbols-outlined text-sm">verified</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">New visit record</span>
+      </div>
+      <h2 id="parishionerHeader" class="font-serif text-xl font-bold text-primary mt-1">Loading…</h2>
+      <p id="parishionerSub" class="text-xs text-on-surface-variant mt-0.5 flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm text-outline">location_on</span>
+        <span>Loading parishioner details…</span>
+      </p>
+      <a id="profileLink" href="#" class="hidden inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-secondary hover:underline">
+        <span class="material-symbols-outlined text-sm">badge</span>View full parishioner record
+      </a>
+    </div>
+  </section>
+
+  <main class="max-w-xl mx-auto px-4 py-4 space-y-4">
+    <div id="errorBox" class="hidden bg-white rounded-xl p-6 text-center border border-parchment-outline">
+      <span class="material-symbols-outlined text-4xl text-error">error</span>
+      <h2 class="font-serif text-lg font-bold text-primary mt-2">Visit log unavailable</h2>
+      <p class="text-sm text-on-surface-variant mt-1">Choose a parishioner from the directory, then tap “Log Visit”.</p>
+      <a href="../index.html" class="inline-flex items-center gap-1 mt-4 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Back to parishioners</a>
+    </div>
+
+    <form id="visitForm" class="hidden space-y-4">
+      <article class="bg-white rounded-xl p-4 border border-parchment-outline shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-parchment-outline pb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">local_hospital</span>
+            <h2 class="font-serif text-base font-bold text-primary">Sacramental rites</h2>
+          </div>
+        </div>
+        <label class="flex items-start gap-3 p-3 rounded-lg bg-parchment-container border border-parchment-outline cursor-pointer">
+          <input id="communionCheck" type="checkbox" checked class="mt-0.5 w-5 h-5 rounded text-primary focus:ring-primary border-outline" />
+          <span class="flex-1">
+            <span class="block text-sm font-semibold">Holy Communion administered</span>
+            <span class="block text-[11px] text-on-surface-variant mt-0.5">Blessed Sacrament distributed with prayers for the sick.</span>
+          </span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-lg bg-parchment-container border border-parchment-outline cursor-pointer">
+          <input id="lowGlutenCheck" type="checkbox" class="mt-0.5 w-5 h-5 rounded text-primary focus:ring-primary border-outline" />
+          <span class="flex-1">
+            <span class="block text-sm font-semibold">Low-gluten consecrated host used</span>
+            <span id="dietaryHint" class="block text-[11px] text-on-surface-variant mt-0.5">Tick if a low-gluten host was required and consumed.</span>
+          </span>
+        </label>
+        <div>
+          <label for="scripture" class="block text-[11px] font-semibold text-on-surface-variant mb-1">Scripture / Gospel shared</label>
+          <input id="scripture" type="text" placeholder="e.g. John 6:51-58 — Gospel of the Day"
+            class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl p-4 border border-parchment-outline shadow-sm space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-xl">favorite</span>
+          <h2 class="font-serif text-base font-bold text-primary">Well-being</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Physical</label>
+            <select id="physical" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-2.5 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option>Alert and comfortable</option>
+              <option>Frail but stable</option>
+              <option>Unwell / in pain</option>
+              <option>Sleeping / resting</option>
+              <option>Not seen</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Spiritual</label>
+            <select id="spiritual" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-2.5 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option>Peaceful and receptive</option>
+              <option>Grateful and prayerful</option>
+              <option>Anxious</option>
+              <option>Distressed</option>
+              <option>Requested prayer</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Mood</label>
+            <input id="mood" placeholder="e.g. Uplifted" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-2.5 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+        </div>
+      </article>
+
+      <article class="bg-white rounded-xl p-4 border border-parchment-outline shadow-sm space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">edit_note</span>
+            <h2 class="font-serif text-base font-bold text-primary">Pastoral observations</h2>
+          </div>
+          <span class="text-[10px] text-outline">Confidential</span>
+        </div>
+        <textarea id="notes" rows="5" placeholder="Record what happened, requests for prayer, changes in health, or follow-up needed…"
+          class="w-full rounded-lg border border-parchment-outline bg-parchment-container p-3 text-sm focus:border-primary focus:ring-primary resize-none leading-relaxed"></textarea>
+        <p class="flex items-center gap-1 text-[10px] text-outline">
+          <span class="material-symbols-outlined text-[13px]">lock</span>
+          Stored securely in your parish Firestore database.
+        </p>
+      </article>
+
+      <button id="btnFlagPriest" type="button" class="w-full min-h-[48px] rounded-lg border-[1.5px] border-secondary text-secondary font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition">
+        <span class="material-symbols-outlined text-lg">add_box</span>
+        <span id="flagPriestLabel">Flag for priest follow-up</span>
+      </button>
+
+      <div id="toast" class="hidden p-3 rounded-lg font-semibold text-center text-sm shadow"></div>
+
+      <button id="btnSubmitLog" type="submit" class="w-full h-12 rounded-lg bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 shadow active:scale-95 transition">
+        <span class="material-symbols-outlined text-lg">send</span>
+        <span id="submitLabel">Complete &amp; submit visit log</span>
+      </button>
+    </form>
+  </main>
+
+  <script type="module">
+    import {
+      requireSession,
+      applySessionUI,
+      initNativeShell,
+      getParishioner,
+      saveVisitLog,
+      formatDateTime,
+      escapeHtml,
+      fullAddress,
+      appUrl
+    } from '../firebase-client.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const parishionerId = params.get('id');
+    let session = null;
+    let current = null;
+    let priestFollowUp = false;
+
+    document.getElementById('logTime').textContent = formatDateTime(new Date());
+
+    document.getElementById('btnBack').addEventListener('click', () => {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = appUrl('index.html');
+    });
+
+    document.getElementById('btnFlagPriest').addEventListener('click', () => {
+      priestFollowUp = !priestFollowUp;
+      const btn = document.getElementById('btnFlagPriest');
+      const label = document.getElementById('flagPriestLabel');
+      if (priestFollowUp) {
+        btn.className = 'w-full min-h-[48px] rounded-lg bg-secondary text-white font-semibold text-sm flex items-center justify-center gap-2 shadow active:scale-95 transition';
+        label.textContent = 'Priest follow-up requested';
+      } else {
+        btn.className = 'w-full min-h-[48px] rounded-lg border-[1.5px] border-secondary text-secondary font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition';
+        label.textContent = 'Flag for priest follow-up';
+      }
+    });
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `p-3 rounded-lg font-semibold text-center text-sm shadow ${isError ? 'bg-error-container text-on-error-container' : 'bg-tertiary-fixed text-on-tertiary-fixed'}`;
+      toast.classList.remove('hidden');
+    }
+
+    document.getElementById('visitForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!current || !session) return;
+
+      const btn = document.getElementById('btnSubmitLog');
+      btn.disabled = true;
+      document.getElementById('submitLabel').textContent = 'Saving visit…';
+
+      try {
+        await saveVisitLog({
+          parishionerId: current.id,
+          parishionerName: current.name,
+          ministerUid: session.user.uid,
+          ministerName: session.profile.displayName || session.user.email,
+          eucharistAdministered: document.getElementById('communionCheck').checked,
+          lowGlutenHost: document.getElementById('lowGlutenCheck').checked,
+          scriptureRead: document.getElementById('scripture').value.trim(),
+          priestVisitRequested: priestFollowUp,
+          notes: document.getElementById('notes').value.trim(),
+          wellBeing: {
+            physical: document.getElementById('physical').value,
+            spiritual: document.getElementById('spiritual').value,
+            mood: document.getElementById('mood').value.trim()
+          }
+        });
+
+        showToast('Visit log saved. Returning to your route…');
+        setTimeout(() => {
+          window.location.href = appUrl('minister_sunday_route_map/code.html');
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        document.getElementById('submitLabel').textContent = 'Complete & submit visit log';
+        showToast(
+          navigator.onLine
+            ? (err.message || 'Could not save the visit log.')
+            : 'You appear to be offline. The visit will sync when your connection returns — keep this page open and try again.',
+          true
+        );
+      }
+    });
+
+    async function init() {
+      session = await requireSession();
+      if (!session) return;
+      applySessionUI(session.profile);
+      initNativeShell();
+
+      if (!parishionerId) {
+        document.getElementById('errorBox').classList.remove('hidden');
+        return;
+      }
+
+      try {
+        current = await getParishioner(parishionerId);
+        if (!current) {
+          document.getElementById('errorBox').classList.remove('hidden');
+          return;
+        }
+
+        document.getElementById('parishionerHeader').textContent = current.name;
+        document.getElementById('parishionerSub').innerHTML = `
+          <span class="material-symbols-outlined text-sm text-outline">location_on</span>
+          <span>${escapeHtml(fullAddress(current) || 'No address')} · ${escapeHtml(session.profile.displayName || 'Eucharistic Minister')}</span>`;
+
+        const profileLink = document.getElementById('profileLink');
+        profileLink.href = `../parishioner_sacramental_profile/code.html?id=${encodeURIComponent(current.id)}`;
+        profileLink.classList.remove('hidden');
+
+        const dietary = current.pastoralCare?.dietary || '';
+        if (/gluten/i.test(dietary)) {
+          document.getElementById('lowGlutenCheck').checked = true;
+          document.getElementById('dietaryHint').textContent = `Registered requirement: ${dietary}`;
+        } else if (dietary) {
+          document.getElementById('dietaryHint').textContent = `Registered preference: ${dietary}`;
+        }
+
+        if (current.pastoralCare?.prayerIntentions) {
+          document.getElementById('notes').value = `Prayer intentions: ${current.pastoralCare.prayerIntentions}\n\n`;
+        }
+
+        document.getElementById('errorBox').classList.add('hidden');
+        document.getElementById('visitForm').classList.remove('hidden');
+      } catch (err) {
+        console.error(err);
+        document.getElementById('errorBox').classList.remove('hidden');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

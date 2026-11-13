@@ -1,6 +1,11 @@
 {
-  "appId": "org.materdei.pastoralcare",
+  "appId": "org.materdei.pastoraltracker",
   "appName": "Mater Dei Pastoral Care",
-  "webDir": "www",
-  "backgroundColor": "#1b365d"
+  "webDir": "stitch_mater_dei_pastoral_tracker",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }

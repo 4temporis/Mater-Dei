@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b365d" />
+  <title>Parishioner Record — Mater Dei Pastoral Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/tailwind.css" />
+</head>
+<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased pb-28">
+  <header class="sticky top-0 z-40 bg-white border-b border-parchment-outline shadow-sm">
+    <div class="max-w-xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <button id="btnBack" aria-label="Go back" class="w-9 h-9 rounded-full text-on-surface-variant hover:bg-surface-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">arrow_back</span>
+        </button>
+        <div class="min-w-0">
+          <h1 class="font-serif text-sm font-bold text-primary leading-tight truncate">Parishioner Record</h1>
+          <p class="text-[11px] text-secondary leading-tight truncate">Mater Dei Pastoral Care</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <a id="btnLogVisitTop" href="#" class="px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">post_add</span>
+          <span class="hidden sm:inline">Log visit</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 py-4 space-y-4">
+    <div id="loadingBox" class="bg-white rounded-xl p-8 text-center border border-parchment-outline">
+      <span class="material-symbols-outlined text-4xl text-outline-variant animate-pulse">sync</span>
+      <p class="text-sm text-on-surface-variant mt-2">Loading parishioner record…</p>
+    </div>
+
+    <div id="errorBox" class="hidden bg-white rounded-xl p-8 text-center border border-parchment-outline">
+      <span class="material-symbols-outlined text-4xl text-error">person_off</span>
+      <h2 class="font-serif text-lg font-bold text-primary mt-2">Record not found</h2>
+      <p class="text-sm text-on-surface-variant mt-1">This parishioner may have been removed. Return to the directory and try again.</p>
+      <a href="../index.html" class="inline-flex items-center gap-1 mt-4 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Back to directory</a>
+    </div>
+
+    <form id="profileForm" class="hidden space-y-4">
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline">
+        <div class="flex items-start gap-4">
+          <div id="avatar" class="w-16 h-16 rounded-full bg-[#eef1f9] text-primary flex items-center justify-center font-bold text-lg shrink-0">–</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed" id="statusBadge">Homebound</span>
+              <span class="text-[11px] text-outline font-mono" id="recordId">–</span>
+            </div>
+            <h2 id="displayName" class="font-serif text-xl text-primary mt-1 truncate">–</h2>
+            <p class="text-xs text-on-surface-variant" id="displayMeta">–</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-parchment-outline">
+          <a id="callBtn" href="#" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-parchment-container text-primary text-xs font-semibold">
+            <span class="material-symbols-outlined text-base">call</span><span id="callLabel">Call</span>
+          </a>
+          <a id="mapsBtn" href="#" target="_blank" rel="noopener" class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-parchment-container text-secondary text-xs font-semibold">
+            <span class="material-symbols-outlined text-base">directions</span><span>Navigate</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">home_pin</span>
+            <h3 class="font-serif text-base font-bold text-primary">Residence &amp; access</h3>
+          </div>
+          <span class="text-[11px] text-on-surface-variant bg-parchment-container px-2 py-0.5 rounded" id="sectorLabel">–</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Street address</label>
+            <input name="street" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">City</label>
+            <input name="city" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">State</label>
+              <input name="state" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">ZIP</label>
+              <input name="zip" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Gate / access code</label>
+            <input name="gateCode" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm font-mono focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Sector</label>
+            <input name="sector" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Access notes</label>
+            <textarea name="accessNotes" rows="2" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-3">
+        <div class="flex items-center justify-between border-b border-parchment-outline pb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">verified_user</span>
+            <h3 class="font-serif text-base font-bold text-primary">Sacramental life</h3>
+          </div>
+          <span class="text-[10px] font-semibold text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded-full">Parish record</span>
+        </div>
+        <div class="space-y-2.5">
+          <div class="flex items-center gap-3 p-2.5 rounded-lg bg-parchment-container">
+            <input id="baptismVerified" type="checkbox" class="w-5 h-5 rounded text-primary focus:ring-primary border-outline" />
+            <label for="baptismVerified" class="flex-1 text-sm font-semibold">Baptized</label>
+            <input name="baptismYear" type="number" inputmode="numeric" placeholder="Year" class="w-20 rounded-lg border border-parchment-outline bg-white px-2 py-1.5 text-sm" />
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-lg bg-parchment-container">
+            <input id="communionVerified" type="checkbox" class="w-5 h-5 rounded text-primary focus:ring-primary border-outline" />
+            <label for="communionVerified" class="flex-1 text-sm font-semibold">First Holy Communion</label>
+            <input name="communionYear" type="number" inputmode="numeric" placeholder="Year" class="w-20 rounded-lg border border-parchment-outline bg-white px-2 py-1.5 text-sm" />
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-lg bg-parchment-container">
+            <input id="confirmationVerified" type="checkbox" class="w-5 h-5 rounded text-primary focus:ring-primary border-outline" />
+            <label for="confirmationVerified" class="flex-1 text-sm font-semibold">Confirmation</label>
+            <input name="confirmationYear" type="number" inputmode="numeric" placeholder="Year" class="w-20 rounded-lg border border-parchment-outline bg-white px-2 py-1.5 text-sm" />
+          </div>
+          <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-parchment-container">
+            <div class="col-span-2 text-sm font-semibold">Anointing of the Sick</div>
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">Last anointed</label>
+              <input name="anointingDate" type="date" class="w-full rounded-lg border border-parchment-outline bg-white px-2 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">Notes</label>
+              <input name="anointingNotes" class="w-full rounded-lg border border-parchment-outline bg-white px-2 py-1.5 text-sm" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-3">
+        <div class="flex items-center gap-2 border-b border-parchment-outline pb-2">
+          <span class="material-symbols-outlined text-secondary">medical_information</span>
+          <h3 class="font-serif text-base font-bold text-primary">Pastoral care</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Preferred visit time</label>
+            <input name="preferredVisitTime" placeholder="e.g. Sunday mornings before 10:30" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Host / dietary needs</label>
+            <input name="dietary" placeholder="e.g. Low-gluten host" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Mobility</label>
+            <input name="mobility" placeholder="e.g. Uses a walker" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Prayer intentions</label>
+            <textarea name="prayerIntentions" rows="2" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Confidential pastoral notes</label>
+            <textarea name="notes" rows="3" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">badge</span>
+            <h3 class="font-serif text-base font-bold text-primary">Ministry details</h3>
+          </div>
+          <span class="text-[10px] text-outline">Admin only</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Full name</label>
+            <input name="name" required class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Age</label>
+            <input name="age" type="number" inputmode="numeric" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Status</label>
+            <select name="status" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option>Homebound</option>
+              <option>Hospital</option>
+              <option>Assisted living</option>
+              <option>Care facility</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Guild / group</label>
+            <input name="guild" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Phone</label>
+            <input name="phone" type="tel" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Assigned minister</label>
+            <select id="assignedMinister" name="assignedMinisterId" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">history</span>
+            <h3 class="font-serif text-base font-bold text-primary">Recent visits</h3>
+          </div>
+          <a href="../visit_notes_sacramental_log/code.html" id="historyLogLink" class="text-[11px] font-semibold text-secondary hover:underline">Log a visit</a>
+        </div>
+        <div id="visitHistory" class="divide-y divide-parchment-outline">
+          <p class="text-xs text-on-surface-variant py-3">Loading visits…</p>
+        </div>
+      </section>
+
+      <div id="toast" class="hidden p-3 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-center text-sm shadow"></div>
+      <div id="adminActions" class="hidden space-y-2 pt-1">
+        <button id="btnSave" type="submit" class="w-full h-12 bg-primary text-white rounded-lg font-semibold text-sm shadow flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined">save</span>
+          Save parishioner record
+        </button>
+        <button id="btnDelete" type="button" class="w-full h-11 border border-error text-error rounded-lg font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined text-lg">delete</span>
+          Remove parishioner
+        </button>
+      </div>
+      <p id="readOnlyNote" class="text-center text-xs text-on-surface-variant pt-1">
+        This record is read-only. Ask the parish office to make changes.
+      </p>
+    </form>
+  </main>
+
+  <script type="module">
+    import {
+      requireSession,
+      applySessionUI,
+      initNativeShell,
+      getParishioner,
+      updateParishioner,
+      deleteParishioner,
+      assignParishionerMinister,
+      listMinisters,
+      getVisitsForParishioner,
+      formatDate,
+      formatDateTime,
+      escapeHtml,
+      initials,
+      fullAddress,
+      mapsUrl,
+      telUrl,
+      appUrl
+    } from '../firebase-client.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const recordId = params.get('id');
+    const form = document.getElementById('profileForm');
+    let current = null;
+    let sessionProfile = null;
+
+    document.getElementById('btnBack').addEventListener('click', () => {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = appUrl('index.html');
+    });
+
+    function setFormValues(p) {
+      const a = p.address || {};
+      const s = p.sacramentalLife || {};
+      const c = p.pastoralCare || {};
+      const set = (name, value) => {
+        const field = form.elements.namedItem(name);
+        if (field) field.value = value ?? '';
+      };
+
+      set('name', p.name);
+      set('age', p.age);
+      set('status', p.status);
+      set('guild', p.guild);
+      set('phone', p.phone);
+      set('street', a.street);
+      set('city', a.city);
+      set('state', a.state);
+      set('zip', a.zip);
+      set('gateCode', a.gateCode);
+      set('sector', p.sector);
+      set('accessNotes', a.accessNotes);
+      set('baptismYear', s.baptism?.year);
+      set('communionYear', s.firstCommunion?.year);
+      set('confirmationYear', s.confirmation?.year);
+      set('anointingDate', s.anointingOfSick?.lastDate);
+      set('anointingNotes', s.anointingOfSick?.notes);
+      set('preferredVisitTime', p.preferredVisitTime);
+      set('dietary', c.dietary);
+      set('mobility', c.mobility);
+      set('prayerIntentions', c.prayerIntentions);
+      set('notes', p.notes);
+
+      document.getElementById('baptismVerified').checked = !!s.baptism?.verified;
+      document.getElementById('communionVerified').checked = !!s.firstCommunion?.verified;
+      document.getElementById('confirmationVerified').checked = !!s.confirmation?.verified;
+    }
+
+    async function loadMinisters(p) {
+      const select = document.getElementById('assignedMinister');
+      try {
+        const ministers = await listMinisters();
+        select.innerHTML = '<option value="">Unassigned</option>' + ministers
+          .filter((m) => m.active !== false)
+          .map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.displayName || m.email || 'Minister')}</option>`)
+          .join('');
+        select.value = p.assignedMinisterId || '';
+      } catch (err) {
+        console.warn('Could not load ministers:', err);
+      }
+    }
+
+    async function loadHistory(p) {
+      const container = document.getElementById('visitHistory');
+      try {
+        const visits = await getVisitsForParishioner(p.id, 8);
+        if (!visits.length) {
+          container.innerHTML = '<p class="text-xs text-on-surface-variant py-3">No visits have been logged for this parishioner yet.</p>';
+          return;
+        }
+        container.innerHTML = visits.map((visit) => `
+          <div class="py-3 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-primary">${escapeHtml(visit.ministerName || 'Eucharistic Minister')}</p>
+              <p class="text-[11px] text-on-surface-variant">${escapeHtml(visit.notes || 'Pastoral visit')}</p>
+              ${visit.priestVisitRequested ? '<span class="inline-flex items-center gap-0.5 mt-1 text-[10px] font-bold text-error"><span class="material-symbols-outlined text-[12px]">priority_high</span>Priest follow-up requested</span>' : ''}
+            </div>
+            <span class="text-[10px] text-outline whitespace-nowrap">${formatDateTime(visit.timestamp)}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.warn(err);
+        container.innerHTML = '<p class="text-xs text-on-surface-variant py-3">Visit history is unavailable offline.</p>';
+      }
+    }
+
+    function renderHeader(p) {
+      document.getElementById('avatar').textContent = initials(p.name);
+      document.getElementById('recordId').textContent = `ID: ${p.id}`;
+      document.getElementById('displayName').textContent = p.name;
+      document.getElementById('statusBadge').textContent = p.status || 'Homebound';
+      document.getElementById('sectorLabel').textContent = p.sector || 'No sector';
+      const meta = [p.age ? `${p.age} years old` : '', p.guild].filter(Boolean).join(' • ') || 'Parishioner';
+      document.getElementById('displayMeta').textContent = meta;
+
+      const callBtn = document.getElementById('callBtn');
+      if (p.phone) {
+        callBtn.href = telUrl(p.phone);
+        document.getElementById('callLabel').textContent = p.phone;
+        callBtn.classList.remove('hidden');
+      } else {
+        callBtn.classList.add('hidden');
+      }
+      document.getElementById('mapsBtn').href = mapsUrl(p);
+      document.getElementById('btnLogVisitTop').href = `../visit_notes_sacramental_log/code.html?id=${encodeURIComponent(p.id)}`;
+      document.getElementById('historyLogLink').href = `../visit_notes_sacramental_log/code.html?id=${encodeURIComponent(p.id)}`;
+    }
+
+    function gatherFormData() {
+      const value = (name) => form.elements.namedItem(name)?.value?.trim() || '';
+      return {
+        name: value('name'),
+        age: value('age'),
+        status: value('status'),
+        guild: value('guild'),
+        phone: value('phone'),
+        sector: value('sector'),
+        preferredVisitTime: value('preferredVisitTime'),
+        notes: value('notes'),
+        lastVisitAt: current?.lastVisitAt || '',
+        assignedMinisterId: value('assignedMinisterId'),
+        assignedMinisterName: document.getElementById('assignedMinister').selectedOptions[0]?.textContent || '',
+        address: {
+          street: value('street'),
+          city: value('city'),
+          state: value('state'),
+          zip: value('zip'),
+          gateCode: value('gateCode'),
+          accessNotes: value('accessNotes')
+        },
+        sacramentalLife: {
+          baptism: { verified: document.getElementById('baptismVerified').checked, year: value('baptismYear') },
+          firstCommunion: { verified: document.getElementById('communionVerified').checked, year: value('communionYear') },
+          confirmation: { verified: document.getElementById('confirmationVerified').checked, year: value('confirmationYear') },
+          anointingOfSick: { lastDate: value('anointingDate'), notes: value('anointingNotes') }
+        },
+        pastoralCare: {
+          dietary: value('dietary'),
+          mobility: value('mobility'),
+          prayerIntentions: value('prayerIntentions')
+        }
+      };
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `p-3 rounded-lg font-semibold text-center text-sm shadow ${isError ? 'bg-error-container text-on-error-container' : 'bg-tertiary-fixed text-on-tertiary-fixed'}`;
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!current || sessionProfile?.role !== 'admin') return;
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving…';
+      try {
+        const data = gatherFormData();
+        if (!data.name) throw new Error('A parishioner name is required.');
+        await updateParishioner(current.id, data);
+        current = { ...current, ...data };
+        renderHeader(current);
+        showToast('Parishioner record saved.');
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Could not save the record.', true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined">save</span> Save parishioner record';
+      }
+    });
+
+    document.getElementById('btnDelete').addEventListener('click', async () => {
+      if (!current) return;
+      const confirmed = window.confirm(`Remove ${current.name} from the parish database? This cannot be undone.`);
+      if (!confirmed) return;
+      try {
+        await deleteParishioner(current.id);
+        window.location.replace(appUrl('index.html'));
+      } catch (err) {
+        console.error(err);
+        showToast('Could not remove this parishioner.', true);
+      }
+    });
+
+    async function init() {
+      const session = await requireSession();
+      if (!session) return;
+      sessionProfile = session.profile;
+      applySessionUI(session.profile);
+      initNativeShell();
+
+      if (!recordId) {
+        document.getElementById('loadingBox').classList.add('hidden');
+        document.getElementById('errorBox').classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const p = await getParishioner(recordId);
+        if (!p) {
+          document.getElementById('loadingBox').classList.add('hidden');
+          document.getElementById('errorBox').classList.remove('hidden');
+          return;
+        }
+        current = p;
+        renderHeader(p);
+        setFormValues(p);
+        await loadMinisters(p);
+
+        const isAdmin = session.profile.role === 'admin';
+        document.getElementById('adminActions').classList.toggle('hidden', !isAdmin);
+        document.getElementById('readOnlyNote').classList.toggle('hidden', isAdmin);
+
+        if (!isAdmin) {
+          form.querySelectorAll('input, select, textarea').forEach((field) => {
+            field.disabled = true;
+          });
+        }
+
+        document.getElementById('loadingBox').classList.add('hidden');
+        form.classList.remove('hidden');
+        loadHistory(p);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loadingBox').classList.add('hidden');
+        document.getElementById('errorBox').classList.remove('hidden');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

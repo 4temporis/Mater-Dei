@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mater Dei Pastoral Care</string>
+    <string name="title_activity_main">Mater Dei Pastoral Care</string>
+    <string name="package_name">org.materdei.pastoraltracker</string>
+    <string name="custom_url_scheme">org.materdei.pastoraltracker</string>
+</resources>

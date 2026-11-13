@@ -1,0 +1,31 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
+  },
+  "hosting": {
+    "public": "stitch_mater_dei_pastoral_tracker",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "/", "destination": "/index.html" },
+      { "source": "/login", "destination": "/login.html" },
+      { "source": "/signup", "destination": "/signup.html" },
+      { "source": "/admin", "destination": "/admin_sunday_visit_roster/code.html" },
+      { "source": "/profile", "destination": "/parishioner_sacramental_profile/code.html" },
+      { "source": "/log", "destination": "/visit_notes_sacramental_log/code.html" },
+      { "source": "/messages", "destination": "/messages/code.html" },
+      { "source": "/route", "destination": "/minister_sunday_route_map/code.html" }
+    ]
+  }
+}

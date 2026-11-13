@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && userDoc().active != false;
+    }
+
+    function isAdmin() {
+      return isActiveUser() && userDoc().role == 'admin';
+    }
+
+    // ---------------------------------------------------------------------
+    // Users (role lives on the user document: admin | minister)
+    // ---------------------------------------------------------------------
+    match /users/{uid} {
+      allow get: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      // Invite-based self signup. The role can only ever be "minister".
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == 'minister'
+        && request.resource.data.active == true
+        && request.resource.data.inviteCode is string
+        && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode))
+        && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.used == false;
+
+      // Admins manage accounts. Users may only edit their own profile fields
+      // (never role, active or invite bookkeeping).
+      allow update: if isAdmin()
+        || (request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['displayName', 'phone', 'updatedAt', 'fcmTokens', 'lastTokenAt']));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Invitations (one-time minister signup codes)
+    // ---------------------------------------------------------------------
+    match /invites/{code} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+
+      // A newly signed-up minister may mark their own invite as used.
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && resource.data.used == false
+            && request.resource.data.used == true
+            && request.resource.data.usedBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['used', 'usedBy', 'usedAt']));
+    }
+
+    // ---------------------------------------------------------------------
+    // Parishioners
+    // ---------------------------------------------------------------------
+    match /parishioners/{parishionerId} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (isActiveUser()
+            && resource.data.assignedMinisterId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['lastVisitAt', 'lastVisitBy', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Visits
+    // ---------------------------------------------------------------------
+    match /visits/{visitId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser()
+        && request.resource.data.ministerUid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Messages (parish office -> ministers)
+    // ---------------------------------------------------------------------
+    match /messages/{messageId} {
+      allow get: if isActiveUser()
+        && (isAdmin()
+            || resource.data.audience == 'all'
+            || resource.data.toUid == request.auth.uid);
+
+      allow list: if isActiveUser();
+
+      allow create: if isAdmin()
+        && request.resource.data.senderUid == request.auth.uid;
+
+      // Recipients may only add themselves to readBy.
+      allow update: if isAdmin()
+        || (isActiveUser()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Parish settings (single settings/app document)
+    // ---------------------------------------------------------------------
+    match /settings/{settingId} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Legacy routes (kept read-only for old data; route is derived live)
+    // ---------------------------------------------------------------------
+    match /routes/{routeId} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin();
+    }
+
+    // Everything else is locked down.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

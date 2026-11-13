@@ -1,0 +1,123 @@
+{
+  "ministers": [
+    {
+      "id": "minister_vance",
+      "name": "Deacon Michael Vance",
+      "email": "michael.vance@materdei.org",
+      "phone": "(555) 482-1092",
+      "role": "deacon",
+      "team": "St. Faustina Care Team",
+      "active": true
+    },
+    {
+      "id": "minister_claire",
+      "name": "Claire Dupont",
+      "email": "claire.dupont@materdei.org",
+      "phone": "(555) 391-8841",
+      "role": "eucharistic_minister",
+      "team": "St. Peregrine Hospital Guild",
+      "active": true
+    }
+  ],
+  "parishioners": [
+    {
+      "id": "MD-8842",
+      "name": "Margaret Higgins",
+      "age": 82,
+      "guild": "St. Monica Guild",
+      "status": "Homebound",
+      "sector": "Sector 4",
+      "phone": "(555) 234-8910",
+      "address": {
+        "street": "442 St. Joseph Terrace, Apt 3B",
+        "city": "Oakridge",
+        "state": "IL",
+        "zip": "60463",
+        "gateCode": "#1984",
+        "accessNotes": "Ring buzzer Higgins. Elevator on north side."
+      },
+      "sacramentalLife": {
+        "baptism": { "verified": true, "year": 1942 },
+        "firstCommunion": { "verified": true, "year": 1950 },
+        "confirmation": { "verified": true, "year": 1954 },
+        "anointingOfSick": { "lastDate": "2024-03-10", "notes": "Post-surgery by Fr. Thomas" }
+      },
+      "pastoralCare": {
+        "dietary": "Low-gluten host required",
+        "mobility": "Armchair bound, hearing impaired in left ear",
+        "prayerIntentions": "For healing of grandson Thomas"
+      }
+    },
+    {
+      "id": "MD-7712",
+      "name": "Anthony Caruso",
+      "age": 79,
+      "guild": "Holy Name Society",
+      "status": "Homebound",
+      "sector": "Sector 4",
+      "phone": "(555) 912-4410",
+      "address": {
+        "street": "108 Cedar Ave",
+        "city": "Oakridge",
+        "state": "IL",
+        "zip": "60463",
+        "gateCode": "Keybox 4421",
+        "accessNotes": "Side ramp entrance"
+      },
+      "sacramentalLife": {
+        "baptism": { "verified": true, "year": 1945 },
+        "firstCommunion": { "verified": true, "year": 1953 },
+        "confirmation": { "verified": true, "year": 1958 },
+        "anointingOfSick": { "lastDate": "2024-08-15", "notes": "Feast of the Assumption" }
+      },
+      "pastoralCare": {
+        "dietary": "Standard host",
+        "mobility": "Uses walker",
+        "prayerIntentions": "For deceased wife Maria"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "route_2024_10_20_vance",
+      "date": "2024-10-20",
+      "liturgicalSunday": "29th Sunday in Ordinary Time",
+      "assignedMinisterId": "minister_vance",
+      "sector": "Sector 4",
+      "stops": [
+        {
+          "order": 1,
+          "parishionerId": "MD-7712",
+          "name": "Anthony Caruso",
+          "status": "completed",
+          "scheduledTime": "09:30 AM"
+        },
+        {
+          "order": 2,
+          "parishionerId": "MD-8842",
+          "name": "Margaret Higgins",
+          "status": "in_progress",
+          "scheduledTime": "10:15 AM"
+        }
+      ]
+    }
+  ],
+  "visits": [
+    {
+      "id": "visit_sample_01",
+      "routeId": "route_2024_10_20_vance",
+      "parishionerId": "MD-8842",
+      "ministerId": "minister_vance",
+      "timestamp": "2024-10-20T10:35:00Z",
+      "eucharistAdministered": true,
+      "scriptureRead": "Mark 10:35-45 (Gospel of the Day)",
+      "wellBeing": {
+        "physical": "Alert, sitting comfortably",
+        "spiritual": "Peaceful and receptive",
+        "mood": "Uplifted"
+      },
+      "priestVisitRequested": false,
+      "notes": "Margaret received Holy Communion with great devotion. Asked for prayers for grandson Thomas."
+    }
+  ]
+}

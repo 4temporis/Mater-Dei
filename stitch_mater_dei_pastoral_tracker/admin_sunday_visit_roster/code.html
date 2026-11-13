@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b365d" />
+  <title>Admin Console — Mater Dei Pastoral Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/tailwind.css" />
+</head>
+<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased pb-24">
+  <header class="sticky top-0 z-40 bg-primary text-white shadow-md">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <a href="../index.html" class="flex items-center gap-2 min-w-0">
+        <span class="material-symbols-outlined text-2xl text-primary-fixed-dim">church</span>
+        <div class="min-w-0">
+          <h1 class="font-serif text-base font-bold leading-tight truncate">Admin Console</h1>
+          <p class="text-[11px] text-primary-fixed-dim leading-tight truncate">Mater Dei Pastoral Care</p>
+        </div>
+      </a>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold" data-session-initials>–</div>
+        <button data-sign-out aria-label="Sign out" class="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-4 space-y-4">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div class="bg-white rounded-xl p-3 border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-primary"><span class="material-symbols-outlined text-lg">groups</span><span class="text-[9px] font-bold uppercase text-secondary">Homebound</span></div>
+        <p class="font-serif text-2xl font-bold text-primary mt-1" id="statParishioners">–</p>
+        <p class="text-[10px] text-on-surface-variant">Parishioners</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-tertiary"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span class="text-[9px] font-bold uppercase text-tertiary">Active</span></div>
+        <p class="font-serif text-2xl font-bold text-tertiary mt-1" id="statMinisters">–</p>
+        <p class="text-[10px] text-on-surface-variant">Ministers</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-secondary"><span class="material-symbols-outlined text-lg">person_alert</span><span class="text-[9px] font-bold uppercase text-secondary">Needs care</span></div>
+        <p class="font-serif text-2xl font-bold text-secondary mt-1" id="statUnassigned">–</p>
+        <p class="text-[10px] text-on-surface-variant">Unassigned</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-primary"><span class="material-symbols-outlined text-lg">verified</span><span class="text-[9px] font-bold uppercase text-primary">Today</span></div>
+        <p class="font-serif text-2xl font-bold text-primary mt-1" id="statToday">–</p>
+        <p class="text-[10px] text-on-surface-variant">Visits logged</p>
+      </div>
+    </section>
+
+    <nav class="grid grid-cols-4 bg-white rounded-xl border border-parchment-outline shadow-sm overflow-hidden">
+      <button data-tab="parishioners" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-primary text-primary bg-[#eef1f9]">
+        <span class="material-symbols-outlined text-xl">groups</span>Parishioners
+      </button>
+      <button data-tab="ministers" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-transparent text-on-surface-variant">
+        <span class="material-symbols-outlined text-xl">volunteer_activism</span>Ministers
+      </button>
+      <button data-tab="messages" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-transparent text-on-surface-variant">
+        <span class="material-symbols-outlined text-xl">send</span>Messages
+      </button>
+      <button data-tab="settings" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-transparent text-on-surface-variant">
+        <span class="material-symbols-outlined text-xl">settings</span>Settings
+      </button>
+    </nav>
+
+    <!-- PARISHIONERS TAB -->
+    <section id="tab-parishioners" class="tab-panel space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="font-serif text-lg font-bold text-primary">People to visit</h2>
+          <p class="text-xs text-on-surface-variant">Add homebound parishioners and assign them to a minister.</p>
+        </div>
+        <button id="btnAddParishioner" class="inline-flex items-center gap-1 px-3 py-2.5 rounded-lg bg-primary text-white text-xs font-semibold shadow active:scale-95 transition whitespace-nowrap">
+          <span class="material-symbols-outlined text-base">person_add</span>Add
+        </button>
+      </div>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+        <input id="parishionerSearch" type="search" placeholder="Search parishioners…" class="w-full rounded-lg border border-parchment-outline bg-white pl-10 pr-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+      </div>
+      <div id="parishionerList" class="space-y-2.5">
+        <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading parishioners…</div>
+      </div>
+    </section>
+
+    <!-- MINISTERS TAB -->
+    <section id="tab-ministers" class="tab-panel hidden space-y-3">
+      <div>
+        <h2 class="font-serif text-lg font-bold text-primary">Eucharistic Ministers</h2>
+        <p class="text-xs text-on-surface-variant">Invite ministers, review their accounts and pause access when needed.</p>
+      </div>
+
+      <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-4 space-y-3">
+        <h3 class="text-sm font-bold text-primary flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">mail</span>Invite a minister
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <input id="inviteName" placeholder="Full name" class="rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          <input id="inviteEmail" type="email" placeholder="Email address" class="rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          <input id="invitePhone" type="tel" placeholder="Mobile number (optional)" class="rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          <input id="inviteTeam" placeholder="Care team (optional)" class="rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        </div>
+        <button id="btnInvite" class="w-full h-11 rounded-lg bg-secondary text-white text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined text-lg">person_add</span>Generate invitation code
+        </button>
+        <div id="inviteResult" class="hidden rounded-lg bg-tertiary-fixed p-3 text-center">
+          <p class="text-[11px] font-semibold text-on-tertiary-fixed">Share this one-time code with the minister</p>
+          <p id="inviteCode" class="font-mono text-2xl font-bold tracking-[0.25em] text-tertiary mt-1">--------</p>
+          <button id="btnCopyInvite" class="mt-2 text-[11px] font-semibold text-primary underline">Copy code</button>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2">Active accounts</h3>
+        <div id="ministerList" class="space-y-2.5">
+          <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading ministers…</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2">Invitation codes</h3>
+        <div id="inviteList" class="space-y-2">
+          <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading invitations…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MESSAGES TAB -->
+    <section id="tab-messages" class="tab-panel hidden space-y-3">
+      <div>
+        <h2 class="font-serif text-lg font-bold text-primary">Send a message</h2>
+        <p class="text-xs text-on-surface-variant">Messages appear in the app inbox for every selected minister.</p>
+      </div>
+
+      <form id="messageForm" class="bg-white rounded-xl border border-parchment-outline shadow-sm p-4 space-y-3">
+        <div>
+          <label class="text-[11px] font-semibold text-on-surface-variant">Recipients</label>
+          <select id="messageRecipient" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+            <option value="">All Eucharistic Ministers</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold text-on-surface-variant">Subject</label>
+          <input id="messageSubject" required placeholder="e.g. Change to Sunday route" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold text-on-surface-variant">Message</label>
+          <textarea id="messageBody" required rows="4" placeholder="Write your message to the ministers…" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+        </div>
+        <button id="btnSendMessage" type="submit" class="w-full h-11 rounded-lg bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined text-lg">send</span>Send message
+        </button>
+      </form>
+
+      <div>
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2">Sent messages</h3>
+        <div id="sentList" class="space-y-2">
+          <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading messages…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section id="tab-settings" class="tab-panel hidden space-y-3">
+      <div>
+        <h2 class="font-serif text-lg font-bold text-primary">Parish settings</h2>
+        <p class="text-xs text-on-surface-variant">These details appear on the portal and route screens.</p>
+      </div>
+
+      <form id="settingsForm" class="bg-white rounded-xl border border-parchment-outline shadow-sm p-4 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Parish name</label>
+            <input id="settingParishName" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Welcome message</label>
+            <textarea id="settingWelcome" rows="2" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Next Sunday</label>
+            <input id="settingSundayDate" type="date" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Liturgical title</label>
+            <input id="settingLiturgical" placeholder="e.g. 29th Sunday in Ordinary Time" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">On-call priest / contact</label>
+            <input id="settingPriestName" placeholder="e.g. Fr. Joseph" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Emergency phone</label>
+            <input id="settingPriestPhone" type="tel" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Parish office phone</label>
+            <input id="settingOfficePhone" type="tel" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Parish office email</label>
+            <input id="settingOfficeEmail" type="email" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+        </div>
+        <button id="btnSaveSettings" type="submit" class="w-full h-11 rounded-lg bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined text-lg">save</span>Save settings
+        </button>
+      </form>
+    </section>
+
+    <div id="toast" class="hidden p-3 rounded-lg font-semibold text-center text-sm shadow"></div>
+  </main>
+
+  <!-- Parishioner modal -->
+  <div id="parishionerModal" class="hidden fixed inset-0 z-50 bg-black/40 p-3 sm:p-6 overflow-y-auto">
+    <div class="max-w-xl mx-auto my-4 bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="sticky top-0 bg-white border-b border-parchment-outline px-4 py-3 flex items-center justify-between">
+        <h2 id="modalTitle" class="font-serif text-base font-bold text-primary">Add parishioner</h2>
+        <button id="btnCloseModal" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="parishionerForm" class="p-4 space-y-3">
+        <input type="hidden" id="editId" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Full name *</label>
+            <input id="pName" required class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Age</label>
+            <input id="pAge" type="number" inputmode="numeric" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Status</label>
+            <select id="pStatus" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option>Homebound</option><option>Hospital</option><option>Assisted living</option><option>Care facility</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Guild / group</label>
+            <input id="pGuild" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Sector</label>
+            <input id="pSector" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Phone</label>
+            <input id="pPhone" type="tel" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Assign to minister</label>
+            <select id="pMinister" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Street address</label>
+            <input id="pStreet" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">City</label>
+            <input id="pCity" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">State</label>
+              <input id="pState" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold text-on-surface-variant">ZIP</label>
+              <input id="pZip" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Gate / access code</label>
+            <input id="pGate" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm font-mono focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Preferred visit time</label>
+            <input id="pPreferredTime" placeholder="e.g. Sunday mornings" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Access notes</label>
+            <input id="pAccessNotes" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Host / dietary needs</label>
+            <input id="pDietary" placeholder="e.g. Low-gluten host" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Mobility</label>
+            <input id="pMobility" placeholder="e.g. Uses a walker" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Prayer intentions</label>
+            <input id="pPrayer" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-[11px] font-semibold text-on-surface-variant">Pastoral notes</label>
+            <textarea id="pNotes" rows="2" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary resize-none"></textarea>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btnCancelModal" class="flex-1 h-11 rounded-lg border border-parchment-outline text-on-surface-variant text-sm font-semibold">Cancel</button>
+          <button type="submit" id="btnSaveParishioner" class="flex-1 h-11 rounded-lg bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-lg">save</span>Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <nav class="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-parchment-outline shadow-[0_-4px_16px_rgba(27,54,93,0.06)] safe-bottom">
+    <div class="max-w-3xl mx-auto flex items-stretch justify-around px-1 py-1.5">
+      <a href="../index.html" class="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">home</span><span class="text-[10px] font-semibold">Portal</span>
+      </a>
+      <a href="../minister_sunday_route_map/code.html" class="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">event_available</span><span class="text-[10px] font-semibold">Visits</span>
+      </a>
+      <a href="../messages/code.html" class="relative flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">mail</span><span class="text-[10px] font-semibold">Inbox</span>
+        <span data-unread-badge class="hidden absolute top-1 right-3 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-white text-[9px] font-bold flex items-center justify-center"></span>
+      </a>
+      <a href="./code.html" class="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl bg-primary-container text-white">
+        <span class="material-symbols-outlined text-[22px]">admin_panel_settings</span><span class="text-[10px] font-semibold">Admin</span>
+      </a>
+    </div>
+  </nav>
+
+  <script type="module">
+    import {
+      requireSession,
+      applySessionUI,
+      initNativeShell,
+      registerPushNotifications,
+      getDashboardStats,
+      addParishioner,
+      updateParishioner,
+      deleteParishioner,
+      assignParishionerMinister,
+      listMinisters,
+      setMinisterActive,
+      createInvite,
+      listInvites,
+      deleteInvite,
+      sendMessage,
+      getInbox,
+      deleteMessage,
+      getAppSettings,
+      saveAppSettings,
+      subscribeInbox,
+      unreadMessages,
+      formatDate,
+      formatDateTime,
+      escapeHtml,
+      fullAddress,
+      toDateInputValue,
+      appUrl
+    } from '../firebase-client.js';
+
+    let session = null;
+    let parishioners = [];
+    let ministers = [];
+    let invites = [];
+    let sentMessages = [];
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `p-3 rounded-lg font-semibold text-center text-sm shadow ${isError ? 'bg-error-container text-on-error-container' : 'bg-tertiary-fixed text-on-tertiary-fixed'}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.add('hidden'));
+      document.getElementById(`tab-${name}`)?.classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        const active = btn.dataset.tab === name;
+        btn.className = `tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 ${active ? 'border-primary text-primary bg-[#eef1f9]' : 'border-transparent text-on-surface-variant'}`;
+      });
+      if (window.location.hash !== `#${name}`) {
+        history.replaceState(null, '', `#${name}`);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Parishioners
+    // -----------------------------------------------------------------------
+
+    function ministerOptions(selected = '', includeBlank = true) {
+      return `${includeBlank ? '<option value="">Unassigned</option>' : ''}${ministers
+        .filter((m) => m.active !== false)
+        .map((m) => `<option value="${escapeHtml(m.id)}" ${m.id === selected ? 'selected' : ''}>${escapeHtml(m.displayName || m.email || 'Minister')}</option>`)
+        .join('')}`;
+    }
+
+    function renderParishioners() {
+      const term = document.getElementById('parishionerSearch').value.trim().toLowerCase();
+      const list = document.getElementById('parishionerList');
+      const filtered = parishioners.filter((p) => {
+        if (!term) return true;
+        return [p.name, p.address?.street, p.address?.city, p.sector, p.assignedMinisterName]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(term));
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="bg-white rounded-xl p-8 text-center border border-parchment-outline">
+          <span class="material-symbols-outlined text-4xl text-outline-variant">person_search</span>
+          <p class="text-sm font-semibold text-primary mt-2">No parishioners found</p>
+          <p class="text-xs text-on-surface-variant mt-1">Tap Add to create the first record.</p>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((p) => `
+        <article class="bg-white rounded-xl border border-parchment-outline shadow-sm p-3.5 space-y-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <a href="../parishioner_sacramental_profile/code.html?id=${encodeURIComponent(p.id)}" class="font-serif font-bold text-primary hover:text-secondary">${escapeHtml(p.name)}</a>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${p.assignedMinisterId ? 'bg-tertiary-fixed text-tertiary' : 'bg-secondary-fixed text-on-secondary-fixed'}">${p.assignedMinisterId ? 'Assigned' : 'Needs minister'}</span>
+              </div>
+              <p class="text-[11px] text-on-surface-variant mt-0.5">${escapeHtml(fullAddress(p) || 'No address')}</p>
+              <p class="text-[10px] text-outline">${escapeHtml(p.sector || 'No sector')} · ${escapeHtml(p.lastVisitAt ? `Last visit ${formatDate(p.lastVisitAt)}` : 'No visits yet')}</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button data-edit-id="${escapeHtml(p.id)}" class="w-8 h-8 rounded-lg hover:bg-surface-container text-primary flex items-center justify-center" title="Edit">
+                <span class="material-symbols-outlined text-lg">edit</span>
+              </button>
+              <button data-delete-id="${escapeHtml(p.id)}" class="w-8 h-8 rounded-lg hover:bg-error-container text-error flex items-center justify-center" title="Delete">
+                <span class="material-symbols-outlined text-lg">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-secondary">volunteer_activism</span>
+            <select data-assign-id="${escapeHtml(p.id)}" class="flex-1 rounded-lg border border-parchment-outline bg-parchment-container px-2 py-2 text-xs focus:border-primary focus:ring-primary">
+              ${ministerOptions(p.assignedMinisterId || '')}
+            </select>
+          </div>
+        </article>`).join('');
+
+      list.querySelectorAll('[data-assign-id]').forEach((select) => {
+        select.addEventListener('change', async () => {
+          const id = select.dataset.assignId;
+          const ministerId = select.value;
+          const minister = ministers.find((m) => m.id === ministerId);
+          try {
+            await assignParishionerMinister(id, ministerId, minister?.displayName || '');
+            const person = parishioners.find((p) => p.id === id);
+            if (person) {
+              person.assignedMinisterId = ministerId;
+              person.assignedMinisterName = minister?.displayName || '';
+            }
+            renderParishioners();
+            showToast(ministerId ? `Assigned to ${minister?.displayName || 'minister'}.` : 'Parishioner unassigned.');
+            loadStats();
+          } catch (err) {
+            console.error(err);
+            showToast('Could not update the assignment.', true);
+          }
+        });
+      });
+
+      list.querySelectorAll('[data-edit-id]').forEach((button) => {
+        button.addEventListener('click', () => openParishionerModal(button.dataset.editId));
+      });
+
+      list.querySelectorAll('[data-delete-id]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const person = parishioners.find((p) => p.id === button.dataset.deleteId);
+          if (!person) return;
+          if (!window.confirm(`Remove ${person.name} from the parish database?`)) return;
+          try {
+            await deleteParishioner(person.id);
+            parishioners = parishioners.filter((p) => p.id !== person.id);
+            renderParishioners();
+            showToast('Parishioner removed.');
+            loadStats();
+          } catch (err) {
+            console.error(err);
+            showToast('Could not remove this parishioner.', true);
+          }
+        });
+      });
+    }
+
+    function openParishionerModal(id = '') {
+      const person = id ? parishioners.find((p) => p.id === id) : null;
+      document.getElementById('editId').value = person?.id || '';
+      document.getElementById('modalTitle').textContent = person ? 'Edit parishioner' : 'Add parishioner';
+      const v = (value) => value ?? '';
+      document.getElementById('pName').value = v(person?.name);
+      document.getElementById('pAge').value = v(person?.age);
+      document.getElementById('pStatus').value = person?.status || 'Homebound';
+      document.getElementById('pGuild').value = v(person?.guild);
+      document.getElementById('pSector').value = v(person?.sector);
+      document.getElementById('pPhone').value = v(person?.phone);
+      document.getElementById('pStreet').value = v(person?.address?.street);
+      document.getElementById('pCity').value = v(person?.address?.city);
+      document.getElementById('pState').value = v(person?.address?.state);
+      document.getElementById('pZip').value = v(person?.address?.zip);
+      document.getElementById('pGate').value = v(person?.address?.gateCode);
+      document.getElementById('pAccessNotes').value = v(person?.address?.accessNotes);
+      document.getElementById('pDietary').value = v(person?.pastoralCare?.dietary);
+      document.getElementById('pMobility').value = v(person?.pastoralCare?.mobility);
+      document.getElementById('pPrayer').value = v(person?.pastoralCare?.prayerIntentions);
+      document.getElementById('pPreferredTime').value = v(person?.preferredVisitTime);
+      document.getElementById('pNotes').value = v(person?.notes);
+      document.getElementById('pMinister').innerHTML = ministerOptions(person?.assignedMinisterId || '');
+      document.getElementById('parishionerModal').classList.remove('hidden');
+    }
+
+    function closeParishionerModal() {
+      document.getElementById('parishionerModal').classList.add('hidden');
+    }
+
+    document.getElementById('btnAddParishioner').addEventListener('click', () => openParishionerModal());
+    document.getElementById('btnCloseModal').addEventListener('click', closeParishionerModal);
+    document.getElementById('btnCancelModal').addEventListener('click', closeParishionerModal);
+    document.getElementById('parishionerSearch').addEventListener('input', renderParishioners);
+
+    document.getElementById('parishionerForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const btn = document.getElementById('btnSaveParishioner');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-lg">sync</span>Saving…';
+
+      const id = document.getElementById('editId').value;
+      const value = (field) => document.getElementById(field).value.trim();
+      const ministerId = document.getElementById('pMinister').value;
+      const ministerName = ministers.find((m) => m.id === ministerId)?.displayName || '';
+      const data = {
+        name: value('pName'),
+        age: value('pAge'),
+        status: value('pStatus'),
+        guild: value('pGuild'),
+        sector: value('pSector'),
+        phone: value('pPhone'),
+        active: true,
+        assignedMinisterId: ministerId,
+        assignedMinisterName: ministerName,
+        preferredVisitTime: value('pPreferredTime'),
+        notes: value('pNotes'),
+        lastVisitAt: id ? (parishioners.find((p) => p.id === id)?.lastVisitAt || '') : '',
+        address: {
+          street: value('pStreet'),
+          city: value('pCity'),
+          state: value('pState'),
+          zip: value('pZip'),
+          gateCode: value('pGate'),
+          accessNotes: value('pAccessNotes')
+        },
+        sacramentalLife: id ? (parishioners.find((p) => p.id === id)?.sacramentalLife || {}) : {},
+        pastoralCare: {
+          dietary: value('pDietary'),
+          mobility: value('pMobility'),
+          prayerIntentions: value('pPrayer')
+        }
+      };
+
+      try {
+        if (id) await updateParishioner(id, data);
+        else await addParishioner(data);
+        closeParishionerModal();
+        showToast(id ? 'Parishioner updated.' : 'Parishioner added.');
+        await loadParishioners();
+        loadStats();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Could not save this parishioner.', true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">save</span>Save';
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Ministers and invites
+    // -----------------------------------------------------------------------
+
+    function renderMinisters() {
+      const list = document.getElementById('ministerList');
+      if (!ministers.length) {
+        list.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">No minister accounts yet. Generate an invitation code above.</div>';
+      } else {
+        list.innerHTML = ministers.map((m) => `
+          <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-3.5 flex items-start justify-between gap-2">
+            <div class="flex items-start gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-[#eef1f9] text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                ${escapeHtml((m.displayName || m.email || 'M')[0].toUpperCase())}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-primary truncate">${escapeHtml(m.displayName || 'Unnamed minister')}</p>
+                <p class="text-[11px] text-on-surface-variant truncate">${escapeHtml(m.email || '')}</p>
+                <p class="text-[10px] text-outline truncate">${escapeHtml([m.phone, m.team].filter(Boolean).join(' · ') || 'No extra details')}</p>
+              </div>
+            </div>
+            <button data-toggle-id="${escapeHtml(m.id)}" data-active="${m.active !== false}"
+              class="text-[10px] font-bold px-2 py-1.5 rounded-lg whitespace-nowrap ${m.active !== false ? 'bg-tertiary-fixed text-tertiary' : 'bg-error-container text-on-error-container'}">
+              ${m.active !== false ? 'Active' : 'Paused'}
+            </button>
+          </div>`).join('');
+
+        list.querySelectorAll('[data-toggle-id]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            const id = button.dataset.toggleId;
+            const active = button.dataset.active === 'true';
+            try {
+              await setMinisterActive(id, !active);
+              const minister = ministers.find((m) => m.id === id);
+              if (minister) minister.active = !active;
+              renderMinisters();
+              showToast(active ? 'Minister access paused.' : 'Minister access restored.');
+              loadStats();
+            } catch (err) {
+              console.error(err);
+              showToast('Could not update minister access.', true);
+            }
+          });
+        });
+      }
+
+      const recipient = document.getElementById('messageRecipient');
+      recipient.innerHTML = '<option value="">All Eucharistic Ministers</option>' + ministers
+        .filter((m) => m.active !== false)
+        .map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.displayName || m.email || 'Minister')}</option>`)
+        .join('');
+    }
+
+    function renderInvites() {
+      const list = document.getElementById('inviteList');
+      const open = invites.filter((invite) => !invite.used);
+      if (!open.length) {
+        list.innerHTML = '<div class="bg-white rounded-xl p-5 text-center text-xs text-on-surface-variant border border-parchment-outline">No unused invitation codes.</div>';
+        return;
+      }
+      list.innerHTML = open.map((invite) => `
+        <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-3 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-mono text-sm font-bold tracking-widest text-primary">${escapeHtml(invite.id)}</p>
+            <p class="text-[11px] text-on-surface-variant truncate">${escapeHtml([invite.name, invite.email].filter(Boolean).join(' · ') || 'Unassigned invite')}</p>
+            <p class="text-[10px] text-outline">Created ${escapeHtml(formatDate(invite.createdAt?.toDate?.() || new Date()))}</p>
+          </div>
+          <button data-delete-invite="${escapeHtml(invite.id)}" class="w-8 h-8 rounded-lg hover:bg-error-container text-error flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>`).join('');
+
+      list.querySelectorAll('[data-delete-invite]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          try {
+            await deleteInvite(button.dataset.deleteInvite);
+            invites = invites.filter((invite) => invite.id !== button.dataset.deleteInvite);
+            renderInvites();
+          } catch (err) {
+            console.error(err);
+            showToast('Could not delete the invitation.', true);
+          }
+        });
+      });
+    }
+
+    document.getElementById('btnInvite').addEventListener('click', async () => {
+      const btn = document.getElementById('btnInvite');
+      btn.disabled = true;
+      try {
+        const code = await createInvite({
+          name: document.getElementById('inviteName').value,
+          email: document.getElementById('inviteEmail').value,
+          phone: document.getElementById('invitePhone').value,
+          team: document.getElementById('inviteTeam').value
+        });
+        document.getElementById('inviteCode').textContent = code;
+        document.getElementById('inviteResult').classList.remove('hidden');
+        document.getElementById('inviteName').value = '';
+        document.getElementById('inviteEmail').value = '';
+        document.getElementById('invitePhone').value = '';
+        document.getElementById('inviteTeam').value = '';
+        await loadInvites();
+      } catch (err) {
+        console.error(err);
+        showToast('Could not create the invitation code.', true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('btnCopyInvite').addEventListener('click', async () => {
+      const code = document.getElementById('inviteCode').textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        showToast('Invitation code copied.');
+      } catch (err) {
+        showToast(`Invitation code: ${code}`, false);
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Messages
+    // -----------------------------------------------------------------------
+
+    function renderSentMessages() {
+      const list = document.getElementById('sentList');
+      if (!sentMessages.length) {
+        list.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">No messages have been sent yet.</div>';
+        return;
+      }
+      list.innerHTML = sentMessages.map((message) => `
+        <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-3.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-primary truncate">${escapeHtml(message.subject)}</p>
+              <p class="text-[11px] text-on-surface-variant">${message.audience === 'all' ? 'All ministers' : `To ${escapeHtml(message.toName || 'minister')}`} · ${escapeHtml(formatDateTime(message.createdAt?.toDate?.() || new Date()))}</p>
+            </div>
+            <button data-delete-message="${escapeHtml(message.id)}" class="w-8 h-8 rounded-lg hover:bg-error-container text-error flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-2 whitespace-pre-wrap">${escapeHtml(message.body)}</p>
+        </div>`).join('');
+
+      list.querySelectorAll('[data-delete-message]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          if (!window.confirm('Delete this message for everyone?')) return;
+          try {
+            await deleteMessage(button.dataset.deleteMessage);
+            sentMessages = sentMessages.filter((message) => message.id !== button.dataset.deleteMessage);
+            renderSentMessages();
+          } catch (err) {
+            console.error(err);
+            showToast('Could not delete the message.', true);
+          }
+        });
+      });
+    }
+
+    document.getElementById('messageForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.getElementById('btnSendMessage');
+      button.disabled = true;
+      const recipientId = document.getElementById('messageRecipient').value;
+      const recipient = ministers.find((m) => m.id === recipientId);
+      try {
+        await sendMessage({
+          subject: document.getElementById('messageSubject').value,
+          body: document.getElementById('messageBody').value,
+          toUid: recipientId,
+          toName: recipient?.displayName || '',
+          sender: { uid: session.user.uid, displayName: session.profile.displayName }
+        });
+        document.getElementById('messageSubject').value = '';
+        document.getElementById('messageBody').value = '';
+        showToast('Message sent to the ministers.');
+        await loadMessages();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Could not send the message.', true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Settings
+    // -----------------------------------------------------------------------
+
+    async function loadSettings() {
+      const settings = await getAppSettings();
+      document.getElementById('settingParishName').value = settings.parishName || '';
+      document.getElementById('settingWelcome').value = settings.welcomeMessage || '';
+      document.getElementById('settingSundayDate').value = settings.nextSundayDate || toDateInputValue(new Date());
+      document.getElementById('settingLiturgical').value = settings.liturgicalSunday || '';
+      document.getElementById('settingPriestName').value = settings.priestOnCallName || '';
+      document.getElementById('settingPriestPhone').value = settings.priestOnCallPhone || '';
+      document.getElementById('settingOfficePhone').value = settings.officePhone || '';
+      document.getElementById('settingOfficeEmail').value = settings.officeEmail || '';
+    }
+
+    document.getElementById('settingsForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await saveAppSettings({
+          parishName: document.getElementById('settingParishName').value.trim(),
+          welcomeMessage: document.getElementById('settingWelcome').value.trim(),
+          nextSundayDate: document.getElementById('settingSundayDate').value,
+          liturgicalSunday: document.getElementById('settingLiturgical').value.trim(),
+          priestOnCallName: document.getElementById('settingPriestName').value.trim(),
+          priestOnCallPhone: document.getElementById('settingPriestPhone').value.trim(),
+          officePhone: document.getElementById('settingOfficePhone').value.trim(),
+          officeEmail: document.getElementById('settingOfficeEmail').value.trim()
+        });
+        showToast('Parish settings saved.');
+      } catch (err) {
+        console.error(err);
+        showToast('Could not save settings.', true);
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // Loaders
+    // -----------------------------------------------------------------------
+
+    async function loadParishioners() {
+      const stats = await getDashboardStats();
+      parishioners = stats.parishionersList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      renderParishioners();
+      renderMinisters();
+      return stats;
+    }
+
+    async function loadStats() {
+      try {
+        const stats = await getDashboardStats();
+        document.getElementById('statParishioners').textContent = stats.parishioners;
+        document.getElementById('statMinisters').textContent = stats.ministers;
+        document.getElementById('statUnassigned').textContent = stats.unassigned;
+        document.getElementById('statToday').textContent = stats.visitsToday;
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
+    async function loadMinisters() {
+      ministers = await listMinisters();
+      renderMinisters();
+    }
+
+    async function loadInvites() {
+      invites = await listInvites();
+      renderInvites();
+    }
+
+    async function loadMessages() {
+      sentMessages = await getInbox(session.user.uid, true);
+      renderSentMessages();
+    }
+
+    async function init() {
+      session = await requireSession({ roles: ['admin'] });
+      if (!session) return;
+      applySessionUI(session.profile);
+      initNativeShell();
+      registerPushNotifications(session.user);
+
+      const hash = (window.location.hash || '#parishioners').replace('#', '');
+      switchTab(['parishioners', 'ministers', 'messages', 'settings'].includes(hash) ? hash : 'parishioners');
+
+      document.querySelectorAll('.tab-btn').forEach((button) => {
+        button.addEventListener('click', () => switchTab(button.dataset.tab));
+      });
+
+      try {
+        await Promise.all([loadMinisters(), loadInvites(), loadSettings()]);
+        await loadParishioners();
+        await loadMessages();
+        await loadStats();
+      } catch (err) {
+        console.error(err);
+        showToast('Some data could not be loaded. Check your connection.', true);
+      }
+
+      subscribeInbox(session.user.uid, true, (messages) => {
+        const unread = unreadMessages(messages, session.user.uid).length;
+        document.querySelectorAll('[data-unread-badge]').forEach((badge) => {
+          badge.textContent = unread > 9 ? '9+' : String(unread);
+          badge.classList.toggle('hidden', unread === 0);
+        });
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

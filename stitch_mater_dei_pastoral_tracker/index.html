@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b365d" />
+  <title>Mater Dei Pastoral Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/tailwind.css" />
+</head>
+<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased flex flex-col pb-24">
+  <header class="sticky top-0 z-40 bg-primary text-white shadow-md">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      <a href="./index.html" class="flex items-center gap-3 min-w-0">
+        <span class="material-symbols-outlined text-2xl text-primary-fixed-dim">church</span>
+        <div class="min-w-0">
+          <h1 class="font-serif text-base font-bold leading-tight truncate">Mater Dei Pastoral Care</h1>
+          <p class="text-[11px] text-primary-fixed-dim leading-tight truncate">Eucharistic Ministry &amp; Homebound Tracker</p>
+        </div>
+      </a>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <a href="./messages/code.html" aria-label="Messages" class="relative w-10 h-10 rounded-full hover:bg-white/10 active:scale-95 transition flex items-center justify-center">
+          <span class="material-symbols-outlined">mail</span>
+          <span data-unread-badge class="hidden absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-secondary-container text-[10px] font-bold text-on-secondary-fixed flex items-center justify-center"></span>
+        </a>
+        <button data-sign-out aria-label="Sign out" class="w-10 h-10 rounded-full hover:bg-white/10 active:scale-95 transition flex items-center justify-center">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </div>
+    <div class="bg-primary-container text-white px-4 py-2">
+      <div class="max-w-3xl mx-auto flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold" data-session-initials>–</div>
+          <div class="min-w-0">
+            <p class="text-xs font-semibold truncate" data-session-name>Loading…</p>
+            <p class="text-[10px] text-primary-fixed-dim truncate" data-session-role>Parish Member</p>
+          </div>
+        </div>
+        <span id="syncBadge" class="text-[10px] font-semibold px-2 py-1 rounded-full bg-white/10 border border-white/15 whitespace-nowrap">Connecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl w-full mx-auto px-4 py-5 flex-1 space-y-5">
+    <div id="pageAlert" class="hidden p-3 rounded-xl bg-secondary-fixed text-on-secondary-fixed text-sm"></div>
+
+    <section class="bg-white rounded-2xl p-5 shadow-sm border border-parchment-outline">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="min-w-0">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-secondary flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">calendar_month</span>
+            <span id="liturgicalDate">Upcoming Sunday</span>
+          </span>
+          <h2 id="liturgicalTitle" class="font-serif text-xl sm:text-2xl font-bold text-primary mt-1">Welcome</h2>
+          <p id="welcomeMessage" class="text-sm text-on-surface-variant mt-1">
+            Everything you need for Sunday visits is now loaded from your parish database.
+          </p>
+        </div>
+        <a href="./minister_sunday_route_map/code.html" class="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow hover:bg-primary-container active:scale-95 transition-all shrink-0">
+          <span class="material-symbols-outlined text-lg">route</span>
+          <span>Open My Route</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="bg-white p-4 rounded-xl border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-primary mb-1">
+          <span class="material-symbols-outlined text-xl">groups</span>
+          <span class="text-[10px] font-bold text-secondary uppercase">Homebound</span>
+        </div>
+        <div class="text-2xl font-bold font-serif text-primary" id="statParishioners">–</div>
+        <div class="text-xs text-on-surface-variant">Parishioners</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-tertiary mb-1">
+          <span class="material-symbols-outlined text-xl">volunteer_activism</span>
+          <span class="text-[10px] font-bold text-tertiary uppercase">Active</span>
+        </div>
+        <div class="text-2xl font-bold font-serif text-tertiary" id="statMinisters">–</div>
+        <div class="text-xs text-on-surface-variant">Ministers</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-primary mb-1">
+          <span class="material-symbols-outlined text-xl">alt_route</span>
+          <span class="text-[10px] font-bold text-primary uppercase">Assigned</span>
+        </div>
+        <div class="text-2xl font-bold font-serif text-primary" id="statAssigned">–</div>
+        <div class="text-xs text-on-surface-variant">Active Visits</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-parchment-outline shadow-sm">
+        <div class="flex items-center justify-between text-secondary mb-1">
+          <span class="material-symbols-outlined text-xl">verified</span>
+          <span class="text-[10px] font-bold text-secondary uppercase">This month</span>
+        </div>
+        <div class="text-2xl font-bold font-serif text-secondary" id="statVisits">–</div>
+        <div class="text-xs text-on-surface-variant">Visits logged</div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <a href="./minister_sunday_route_map/code.html" class="group bg-white rounded-2xl p-4 border border-parchment-outline shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex items-center gap-3">
+        <span class="w-11 h-11 rounded-xl bg-[#eef1f9] text-primary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">route</span>
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-serif font-bold text-primary">Sunday Route</h3>
+          <p class="text-xs text-on-surface-variant truncate">Addresses, access codes and care notes</p>
+        </div>
+        <span class="material-symbols-outlined text-primary group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+      </a>
+      <a href="./messages/code.html" class="group bg-white rounded-2xl p-4 border border-parchment-outline shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex items-center gap-3">
+        <span class="w-11 h-11 rounded-xl bg-[#ffdcc5] text-[#5a3517] flex items-center justify-center shrink-0 relative">
+          <span class="material-symbols-outlined text-2xl">mail</span>
+          <span data-unread-badge class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-secondary text-white text-[10px] font-bold flex items-center justify-center"></span>
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-serif font-bold text-primary">Parish Messages</h3>
+          <p id="messageSummary" class="text-xs text-on-surface-variant truncate">Inbox from the parish office</p>
+        </div>
+        <span class="material-symbols-outlined text-primary group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+      </a>
+      <a data-admin-only href="./admin_sunday_visit_roster/code.html" class="hidden group bg-white rounded-2xl p-4 border border-parchment-outline shadow-sm hover:shadow-md hover:border-primary/40 transition-all items-center gap-3">
+        <span class="w-11 h-11 rounded-xl bg-[#b6f1b6] text-[#002107] flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-serif font-bold text-primary">Admin Console</h3>
+          <p class="text-xs text-on-surface-variant truncate">Add parishioners, assign visits, send messages</p>
+        </div>
+        <span class="material-symbols-outlined text-primary group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+      </a>
+      <button id="refreshBtn" type="button" class="group bg-white rounded-2xl p-4 border border-parchment-outline shadow-sm hover:shadow-md transition-all flex items-center gap-3 text-left">
+        <span class="w-11 h-11 rounded-xl bg-parchment-container text-primary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-2xl">sync</span>
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-serif font-bold text-primary">Refresh Data</h3>
+          <p class="text-xs text-on-surface-variant truncate">Pull the latest records from Firestore</p>
+        </div>
+      </button>
+    </section>
+
+    <section class="bg-white rounded-2xl border border-parchment-outline shadow-sm overflow-hidden">
+      <div class="p-4 pb-3 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="font-serif text-lg font-bold text-primary">Homebound Parishioners</h3>
+          <p class="text-xs text-on-surface-variant">Live from your parish database</p>
+        </div>
+        <span id="directoryCount" class="text-xs font-semibold text-on-surface-variant bg-parchment-container px-2 py-1 rounded-full">–</span>
+      </div>
+      <div class="px-4 pb-3">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+          <input id="searchInput" type="search" placeholder="Search name, street or sector…"
+            class="w-full rounded-lg border border-parchment-outline bg-parchment-container pl-10 pr-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        </div>
+      </div>
+      <div id="parishionerList" class="divide-y divide-parchment-outline border-t border-parchment-outline">
+        <div class="p-6 text-center text-sm text-on-surface-variant">Loading parishioners…</div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-parchment-outline shadow-[0_-4px_16px_rgba(27,54,93,0.06)] safe-bottom">
+    <div class="max-w-3xl mx-auto flex items-stretch justify-around px-1 py-1.5">
+      <a href="./index.html" class="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl bg-primary-container text-white">
+        <span class="material-symbols-outlined text-[22px]">home</span>
+        <span class="text-[10px] font-semibold">Portal</span>
+      </a>
+      <a href="./minister_sunday_route_map/code.html" class="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">event_available</span>
+        <span class="text-[10px] font-semibold">Visits</span>
+      </a>
+      <a href="./messages/code.html" class="relative flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">mail</span>
+        <span class="text-[10px] font-semibold">Inbox</span>
+        <span data-unread-badge class="hidden absolute top-1 right-3 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-white text-[9px] font-bold flex items-center justify-center"></span>
+      </a>
+      <a data-admin-only href="./admin_sunday_visit_roster/code.html" class="hidden flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+        <span class="text-[10px] font-semibold">Admin</span>
+      </a>
+    </div>
+  </nav>
+
+  <script type="module">
+    import {
+      requireSession,
+      applySessionUI,
+      initNativeShell,
+      registerPushNotifications,
+      getDashboardStats,
+      getAppSettings,
+      subscribeInbox,
+      unreadMessages,
+      formatDate,
+      escapeHtml,
+      initials,
+      fullAddress,
+      appUrl
+    } from './firebase-client.js';
+
+    const listEl = document.getElementById('parishionerList');
+    const searchInput = document.getElementById('searchInput');
+    const countEl = document.getElementById('directoryCount');
+    let allParishioners = [];
+    let currentProfile = null;
+    let inbox = [];
+
+    function renderList() {
+      const term = searchInput.value.trim().toLowerCase();
+      const filtered = allParishioners.filter((person) => {
+        if (!term) return true;
+        return [person.name, person.sector, person.address?.street, person.address?.city, person.assignedMinisterName]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(term));
+      });
+
+      countEl.textContent = `${filtered.length} of ${allParishioners.length}`;
+
+      if (!filtered.length) {
+        listEl.innerHTML = `
+          <div class="p-8 text-center">
+            <span class="material-symbols-outlined text-4xl text-outline-variant">person_search</span>
+            <p class="text-sm font-semibold text-primary mt-2">No parishioners found</p>
+            <p class="text-xs text-on-surface-variant mt-1">${allParishioners.length ? 'Try a different search term.' : 'The parish office can add parishioners from the Admin Console.'}</p>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((p) => {
+        const assigned = p.assignedMinisterId
+          ? `<span class="text-tertiary font-semibold">${escapeHtml(p.assignedMinisterName || 'Assigned')}</span>`
+          : '<span class="text-secondary font-semibold">Unassigned</span>';
+        const lastVisit = p.lastVisitAt ? `Last visit ${formatDate(p.lastVisitAt)}` : 'No visits logged yet';
+        return `
+          <div class="p-4 flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-full bg-[#eef1f9] text-primary flex items-center justify-center font-bold text-sm shrink-0">
+                ${escapeHtml(initials(p.name))}
+              </div>
+              <div class="min-w-0">
+                <a href="./parishioner_sacramental_profile/code.html?id=${encodeURIComponent(p.id)}" class="font-serif font-bold text-primary hover:text-secondary">
+                  ${escapeHtml(p.name)}
+                </a>
+                <p class="text-xs text-on-surface-variant truncate">
+                  ${escapeHtml(p.address?.street || 'No address')}${p.address?.city ? `, ${escapeHtml(p.address.city)}` : ''}
+                </p>
+                <p class="text-[11px] text-on-surface-variant mt-0.5">
+                  ${assigned} · ${escapeHtml(lastVisit)}
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5 shrink-0">
+              <a href="./parishioner_sacramental_profile/code.html?id=${encodeURIComponent(p.id)}" class="px-2.5 py-1 rounded-lg bg-parchment-container text-primary text-[11px] font-semibold hover:bg-primary hover:text-white transition-colors text-center">Profile</a>
+              <a href="./visit_notes_sacramental_log/code.html?id=${encodeURIComponent(p.id)}" class="px-2.5 py-1 rounded-lg bg-secondary text-white text-[11px] font-semibold hover:bg-opacity-90 transition-colors text-center">Log Visit</a>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderUnread() {
+      const unread = unreadMessages(inbox, currentProfile?.id).length;
+      document.querySelectorAll('[data-unread-badge]').forEach((badge) => {
+        badge.textContent = unread > 9 ? '9+' : String(unread);
+        badge.classList.toggle('hidden', unread === 0);
+      });
+      document.getElementById('messageSummary').textContent = unread
+        ? `${unread} unread message${unread === 1 ? '' : 's'}`
+        : 'No unread messages';
+    }
+
+    async function loadEverything() {
+      const badge = document.getElementById('syncBadge');
+      badge.textContent = 'Syncing…';
+      try {
+        const [stats, settings] = await Promise.all([getDashboardStats(), getAppSettings()]);
+        allParishioners = stats.parishionersList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        document.getElementById('statParishioners').textContent = stats.parishioners;
+        document.getElementById('statMinisters').textContent = stats.ministers;
+        document.getElementById('statAssigned').textContent = stats.assigned;
+        document.getElementById('statVisits').textContent = stats.visitsThisMonth;
+
+        const sunday = settings.nextSundayDate ? new Date(`${settings.nextSundayDate}T12:00:00`) : new Date();
+        document.getElementById('liturgicalDate').textContent = `Sunday · ${formatDate(sunday, { weekday: 'long', month: 'long', day: 'numeric' })}`;
+        document.getElementById('liturgicalTitle').textContent = settings.liturgicalSunday || `Welcome, ${currentProfile.displayName?.split(' ')[0] || 'Minister'}`;
+        if (settings.welcomeMessage) document.getElementById('welcomeMessage').textContent = settings.welcomeMessage;
+
+        renderList();
+        badge.textContent = navigator.onLine ? 'Live' : 'Offline cache';
+        badge.className = `text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap border ${navigator.onLine ? 'bg-white/10 border-white/15' : 'bg-secondary text-white border-secondary'}`;
+      } catch (err) {
+        console.error(err);
+        badge.textContent = 'Offline cache';
+        badge.className = 'text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap border bg-secondary text-white border-secondary';
+        if (!allParishioners.length) {
+          listEl.innerHTML = `
+            <div class="p-8 text-center">
+              <span class="material-symbols-outlined text-4xl text-error">cloud_off</span>
+              <p class="text-sm font-semibold text-primary mt-2">Could not reach Firestore</p>
+              <p class="text-xs text-on-surface-variant mt-1">Check your internet connection and tap Refresh Data.</p>
+            </div>`;
+        }
+      }
+    }
+
+    async function init() {
+      const session = await requireSession();
+      if (!session) return;
+      currentProfile = { id: session.user.uid, ...session.profile };
+      applySessionUI(session.profile);
+      initNativeShell();
+      registerPushNotifications(session.user);
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('denied') === '1') {
+        const alert = document.getElementById('pageAlert');
+        alert.textContent = 'You do not have permission to open that page.';
+        alert.classList.remove('hidden');
+      }
+      if (params.get('welcome') === '1') {
+        const alert = document.getElementById('pageAlert');
+        alert.className = 'p-3 rounded-xl bg-tertiary-fixed text-on-tertiary-fixed text-sm';
+        alert.textContent = 'Welcome! Your minister account is ready.';
+        alert.classList.remove('hidden');
+      }
+
+      await loadEverything();
+
+      subscribeInbox(session.user.uid, session.profile.role === 'admin', (messages) => {
+        inbox = messages;
+        renderUnread();
+      });
+    }
+
+    searchInput.addEventListener('input', renderList);
+    document.getElementById('refreshBtn').addEventListener('click', loadEverything);
+    window.addEventListener('online', loadEverything);
+
+    init();
+  </script>
+</body>
+</html>

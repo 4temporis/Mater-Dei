@@ -1,2 +1,27 @@
+# Dependencies
 node_modules/
-android/
+functions/node_modules/
+
+# Firebase service account keys & debug logs
+*-firebase-adminsdk-*.json
+firebase-debug.log
+.firebase/
+*.log
+
+# Build output
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+stitch_mater_dei_pastoral_tracker.zip
+*.zip
+
+# Agent tooling (not part of the app)
+.agents/
+skills-lock.json
+
+# OS files
+Thumbs.db
+.DS_Store

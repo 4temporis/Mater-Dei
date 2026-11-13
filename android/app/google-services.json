@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "211167104882",
+    "project_id": "eucharistic-ministers",
+    "storage_bucket": "eucharistic-ministers.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:211167104882:android:be4c32d0aeb17c798517eb",
+        "android_client_info": {
+          "package_name": "org.materdei.pastoraltracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCN0ManTTrt2YMNzKwPRX3Z1Z8QPrEcdI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
