@@ -69,6 +69,11 @@ hard-coded sample content in the UI.
    `materdei.parowvalley@gmail.com`. Pass `--email` / `--password` to override,
    or set `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
+   On the sign-in screen, choose the **Administrator** tab, confirm the parish
+   email is filled in, and enter the password. The **Minister** tab is for
+   Eucharistic Ministers who joined with an invite code. Both password fields
+   have an eye button to reveal what you typed.
+
 ## Running locally
 
 ```powershell

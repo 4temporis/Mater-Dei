@@ -21,8 +21,25 @@
     </div>
 
     <section class="bg-white rounded-2xl border border-[#E5DFD7] shadow-sm p-6">
-      <h2 class="font-serif text-xl font-bold text-primary">Parish sign in</h2>
-      <p class="text-sm text-on-surface-variant mt-1">Administrators and Eucharistic Ministers use the account provided by the parish office.</p>
+      <h2 id="loginTitle" class="font-serif text-xl font-bold text-primary">Parish sign in</h2>
+      <p id="loginSubtitle" class="text-sm text-on-surface-variant mt-1">Eucharistic Ministers sign in with the account provided by the parish office.</p>
+
+      <div class="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-parchment-container border border-[#E5DFD7] p-1" role="tablist" aria-label="Sign-in type">
+        <button id="ministerTab" type="button" role="tab" aria-selected="true"
+          class="h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition bg-white text-primary shadow-sm">
+          <span class="material-symbols-outlined text-base">volunteer_activism</span>
+          Minister
+        </button>
+        <button id="adminTab" type="button" role="tab" aria-selected="false"
+          class="h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition text-on-surface-variant hover:text-primary">
+          <span class="material-symbols-outlined text-base">admin_panel_settings</span>
+          Administrator
+        </button>
+      </div>
+
+      <p id="adminHint" class="hidden mt-3 text-xs text-on-surface-variant bg-parchment-container border border-[#E5DFD7] rounded-lg px-3 py-2">
+        Administrator access uses the parish office account. The email is pre-filled — enter its password to continue.
+      </p>
 
       <div id="errorBox" class="hidden mt-4 p-3 rounded-lg bg-error-container text-on-error-container text-sm"></div>
       <div id="infoBox" class="hidden mt-4 p-3 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed text-sm"></div>
@@ -39,9 +56,15 @@
             <label for="password" class="block text-xs font-semibold text-on-surface-variant">Password</label>
             <button id="forgotBtn" type="button" class="text-xs font-semibold text-secondary hover:underline">Forgot password?</button>
           </div>
-          <input id="password" name="password" type="password" autocomplete="current-password" required
-            class="w-full rounded-lg border border-[#E5DFD7] bg-parchment-container px-3 py-3 text-sm focus:border-primary focus:ring-primary"
-            placeholder="••••••••" />
+          <div class="relative">
+            <input id="password" name="password" type="password" autocomplete="current-password" required
+              class="w-full rounded-lg border border-[#E5DFD7] bg-parchment-container pl-3 pr-11 py-3 text-sm focus:border-primary focus:ring-primary"
+              placeholder="••••••••" />
+            <button type="button" data-toggle-password="password" aria-label="Show password"
+              class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-on-surface-variant hover:text-primary">
+              <span class="material-symbols-outlined text-xl">visibility</span>
+            </button>
+          </div>
         </div>
 
         <button id="submitBtn" type="submit"
@@ -73,6 +96,7 @@
       waitForAuthUser,
       getUserProfile,
       getAppSettings,
+      signOutSession,
       appUrl
     } from './firebase-client.js';
 
@@ -82,6 +106,57 @@
     const submitBtn = document.getElementById('submitBtn');
     const submitLabel = document.getElementById('submitLabel');
     const params = new URLSearchParams(window.location.search);
+
+    const ADMIN_EMAIL = 'materdei.parowvalley@gmail.com';
+    const ADMIN_HOME = 'admin_sunday_visit_roster/code.html';
+    const titleEl = document.getElementById('loginTitle');
+    const subtitleEl = document.getElementById('loginSubtitle');
+    const adminHint = document.getElementById('adminHint');
+    const ministerTab = document.getElementById('ministerTab');
+    const adminTab = document.getElementById('adminTab');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    let adminMode = params.get('admin') === '1';
+
+    const ACTIVE_TAB = ['bg-white', 'text-primary', 'shadow-sm'];
+    const IDLE_TAB = ['text-on-surface-variant', 'hover:text-primary'];
+
+    function setMode(isAdmin, { prefill = true } = {}) {
+      adminMode = isAdmin;
+      ministerTab.setAttribute('aria-selected', String(!isAdmin));
+      adminTab.setAttribute('aria-selected', String(isAdmin));
+      ACTIVE_TAB.forEach((name) => (isAdmin ? adminTab : ministerTab).classList.add(name));
+      IDLE_TAB.forEach((name) => (isAdmin ? ministerTab : adminTab).classList.add(name));
+      ACTIVE_TAB.forEach((name) => (isAdmin ? ministerTab : adminTab).classList.remove(name));
+      IDLE_TAB.forEach((name) => (isAdmin ? adminTab : ministerTab).classList.remove(name));
+      titleEl.textContent = isAdmin ? 'Administrator sign in' : 'Parish sign in';
+      subtitleEl.textContent = isAdmin
+        ? 'Parish office administrators manage parishioners, ministers, invites and messages.'
+        : 'Eucharistic Ministers sign in with the account provided by the parish office.';
+      adminHint.classList.toggle('hidden', !isAdmin);
+      if (prefill) emailInput.value = isAdmin ? ADMIN_EMAIL : '';
+      errorBox.classList.add('hidden');
+      infoBox.classList.add('hidden');
+      try {
+        window.history.replaceState(null, '', isAdmin ? 'login.html?admin=1' : 'login.html');
+      } catch {
+        /* file:// or WebView without history support */
+      }
+    }
+
+    document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.togglePassword);
+        const reveal = input.type === 'password';
+        input.type = reveal ? 'text' : 'password';
+        const icon = button.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = reveal ? 'visibility_off' : 'visibility';
+        button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+      });
+    });
+
+    ministerTab.addEventListener('click', () => setMode(false));
+    adminTab.addEventListener('click', () => setMode(true));
 
     function showError(message) {
       infoBox.classList.add('hidden');
@@ -100,9 +175,16 @@
       if (!user) return;
       try {
         const profile = await getUserProfile(user.uid);
-        if (profile && profile.active !== false) {
-          window.location.replace(appUrl('index.html'));
+        if (!profile || profile.active === false) {
+          await signOutSession();
+          return;
         }
+        if (adminMode && profile.role !== 'admin') {
+          await signOutSession();
+          showInfo('You were signed in as a minister. Enter the parish administrator account to continue.');
+          return;
+        }
+        window.location.replace(appUrl(adminMode ? ADMIN_HOME : 'index.html'));
       } catch (err) {
         console.warn(err);
       }
@@ -144,10 +226,17 @@
           submitLabel.textContent = 'Sign in';
           return;
         }
+        if (adminMode && profile.role !== 'admin') {
+          await signOutSession();
+          showError('This account does not have administrator access. Switch to Minister sign in, or use the parish administrator account.');
+          submitBtn.disabled = false;
+          submitLabel.textContent = 'Sign in';
+          return;
+        }
         const next = params.get('next');
         const safeNext = next && !/^[a-z][a-z0-9+.-]*:/i.test(next) && !next.startsWith('//')
           ? next
-          : 'index.html';
+          : adminMode ? ADMIN_HOME : 'index.html';
         window.location.replace(appUrl(safeNext));
       } catch (err) {
         console.error(err);
@@ -191,6 +280,7 @@
       }
     }).catch(() => {});
 
+    setMode(adminMode, { prefill: adminMode });
     redirectIfSignedIn();
   </script>
 </body>

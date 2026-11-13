@@ -38289,6 +38289,9 @@ async function signIn(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
   return cred.user;
 }
+async function signOutSession() {
+  await signOut(auth);
+}
 async function signOutUser() {
   await signOut(auth);
   window.location.replace(appUrl("login.html"));
@@ -38859,6 +38862,7 @@ export {
   setDoc,
   setMinisterActive,
   signIn,
+  signOutSession,
   signOutUser,
   signUpWithInvite,
   startOfTodayIso,

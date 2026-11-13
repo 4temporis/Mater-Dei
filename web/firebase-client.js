@@ -160,6 +160,10 @@ export async function signIn(email, password) {
   return cred.user;
 }
 
+export async function signOutSession() {
+  await signOut(auth);
+}
+
 export async function signOutUser() {
   await signOut(auth);
   window.location.replace(appUrl('login.html'));
