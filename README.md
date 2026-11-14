@@ -119,6 +119,23 @@ For a release build:
 npm run android:release
 ```
 
+The release APK is written to:
+
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+Release builds are signed with the key described by `android/key.properties`
+(`android/app/release.keystore`, PKCS12). Keep `release.keystore`,
+`release-key.pem` and `key.properties` backed up and private — Android requires the
+same key for every future update, and they are excluded from git.
+
+### Install on a phone
+
+Copy `app-release.apk` (or `app-debug.apk`) to the phone, tap it, and allow
+"Install unknown apps" for the file manager or browser when prompted. The package
+id is `org.materdei.pastoraltracker`.
+
 ## Push notifications (optional)
 
 Push notifications use Firebase Cloud Messaging through the `notifyMinisters`

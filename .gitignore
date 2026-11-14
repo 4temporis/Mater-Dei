@@ -17,6 +17,12 @@ android/local.properties
 android/capacitor-cordova-android-plugins/
 stitch_mater_dei_pastoral_tracker.zip
 *.zip
+*.apk
+
+# Release signing (keep the keystore and passwords out of version control)
+android/key.properties
+android/app/*.keystore
+android/app/*.pem
 
 # Agent tooling (not part of the app)
 .agents/
