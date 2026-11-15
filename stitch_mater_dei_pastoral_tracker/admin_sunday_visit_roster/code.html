@@ -81,7 +81,7 @@
       </div>
       <div class="relative">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-        <input id="parishionerSearch" type="search" placeholder="Search parishioners…" class="w-full rounded-lg border border-parchment-outline bg-white pl-10 pr-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        <input id="parishionerSearch" type="search" placeholder="Search name, street, sector or ID…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" class="w-full rounded-lg border border-parchment-outline bg-white pl-10 pr-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
       </div>
       <div id="parishionerList" class="space-y-2.5">
         <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading parishioners…</div>
@@ -362,6 +362,8 @@
       formatDateTime,
       escapeHtml,
       fullAddress,
+      matchesSearch,
+      digitsOnly,
       toDateInputValue,
       appUrl
     } from '../firebase-client.js';
@@ -404,20 +406,27 @@
     }
 
     function renderParishioners() {
-      const term = document.getElementById('parishionerSearch').value.trim().toLowerCase();
+      const term = document.getElementById('parishionerSearch').value;
       const list = document.getElementById('parishionerList');
-      const filtered = parishioners.filter((p) => {
-        if (!term) return true;
-        return [p.name, p.address?.street, p.address?.city, p.sector, p.assignedMinisterName]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(term));
-      });
+      const filtered = parishioners.filter((p) => matchesSearch([
+        p.name,
+        p.address?.street,
+        p.address?.city,
+        p.address?.zip,
+        p.address?.gateCode,
+        p.sector,
+        p.status,
+        p.phone,
+        digitsOnly(p.phone),
+        p.assignedMinisterName,
+        p.id
+      ], term));
 
       if (!filtered.length) {
         list.innerHTML = `<div class="bg-white rounded-xl p-8 text-center border border-parchment-outline">
           <span class="material-symbols-outlined text-4xl text-outline-variant">person_search</span>
           <p class="text-sm font-semibold text-primary mt-2">No parishioners found</p>
-          <p class="text-xs text-on-surface-variant mt-1">Tap Add to create the first record.</p>
+          <p class="text-xs text-on-surface-variant mt-1">${parishioners.length ? 'Try a different name, street, sector or ID.' : 'Tap Add to create the first record.'}</p>
         </div>`;
         return;
       }
@@ -528,7 +537,9 @@
     document.getElementById('btnAddParishioner').addEventListener('click', () => openParishionerModal());
     document.getElementById('btnCloseModal').addEventListener('click', closeParishionerModal);
     document.getElementById('btnCancelModal').addEventListener('click', closeParishionerModal);
-    document.getElementById('parishionerSearch').addEventListener('input', renderParishioners);
+    ['input', 'change', 'search', 'keyup'].forEach((eventName) => {
+      document.getElementById('parishionerSearch').addEventListener(eventName, renderParishioners);
+    });
 
     document.getElementById('parishionerForm').addEventListener('submit', async (event) => {
       event.preventDefault();

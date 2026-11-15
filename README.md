@@ -159,6 +159,15 @@ Instead, `web/input.css` consumes the runtime insets:
 When changing the layout, keep new fixed/sticky bars inside these utilities
 instead of adding fixed pixel padding.
 
+### Searching parishioners
+
+Search boxes on the dashboard and in the Admin Console match every word you type
+in any order, against name, street, city, sector, phone, gate code, assigned
+minister and record ID. So `alma snyders` finds "Alma Wilmina Snyders",
+`ernest ada` finds "Mrs Ada Ernest", and `sny`, `parow` or `MD-6016` all work.
+Matching ignores accents, punctuation and capitalisation (see `matchesSearch`
+in `web/firebase-client.js`).
+
 ## Push notifications (optional)
 
 Push notifications use Firebase Cloud Messaging through the `notifyMinisters`

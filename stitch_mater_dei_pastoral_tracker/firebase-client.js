@@ -38506,6 +38506,21 @@ async function saveAppSettings(settings) {
     { merge: true }
   );
 }
+var SEARCH_DIACRITICS = /[\u0300-\u036f]/g;
+function normalizeSearchText(value) {
+  return String(value ?? "").normalize("NFD").replace(SEARCH_DIACRITICS, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+function digitsOnly(value) {
+  return String(value ?? "").replace(/\D+/g, "");
+}
+function matchesSearch(fields, query2) {
+  const tokens = normalizeSearchText(query2).split(" ").filter(Boolean);
+  if (!tokens.length) return true;
+  const haystack = normalizeSearchText(
+    (Array.isArray(fields) ? fields : [fields]).filter((value) => value !== null && value !== void 0 && value !== "").join(" ")
+  );
+  return tokens.every((token) => haystack.includes(token));
+}
 function normalizeParishioner(data = {}) {
   const address = data.address || {};
   return {
@@ -38844,6 +38859,7 @@ export {
   deleteInvite,
   deleteMessage,
   deleteParishioner,
+  digitsOnly,
   doc,
   escapeHtml,
   firebaseConfig,
@@ -38872,7 +38888,9 @@ export {
   mapsUrl,
   markAllMessagesRead,
   markMessageRead,
+  matchesSearch,
   nextSunday,
+  normalizeSearchText,
   onSnapshot,
   orderBy,
   query,

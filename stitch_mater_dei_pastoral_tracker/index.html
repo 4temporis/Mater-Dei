@@ -155,7 +155,8 @@
       <div class="px-4 pb-3">
         <div class="relative">
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-          <input id="searchInput" type="search" placeholder="Search name, street or sector…"
+          <input id="searchInput" type="search" placeholder="Search name, street, sector or ID…"
+            autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
             class="w-full rounded-lg border border-parchment-outline bg-parchment-container pl-10 pr-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
         </div>
       </div>
@@ -201,6 +202,8 @@
       escapeHtml,
       initials,
       fullAddress,
+      matchesSearch,
+      digitsOnly,
       appUrl
     } from './firebase-client.js';
 
@@ -212,13 +215,21 @@
     let inbox = [];
 
     function renderList() {
-      const term = searchInput.value.trim().toLowerCase();
-      const filtered = allParishioners.filter((person) => {
-        if (!term) return true;
-        return [person.name, person.sector, person.address?.street, person.address?.city, person.assignedMinisterName]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(term));
-      });
+      const term = searchInput.value;
+      const filtered = allParishioners.filter((person) => matchesSearch([
+        person.name,
+        person.sector,
+        person.status,
+        person.guild,
+        person.phone,
+        digitsOnly(person.phone),
+        person.address?.street,
+        person.address?.city,
+        person.address?.zip,
+        person.address?.gateCode,
+        person.assignedMinisterName,
+        person.id
+      ], term));
 
       countEl.textContent = `${filtered.length} of ${allParishioners.length}`;
 
@@ -338,7 +349,9 @@
       });
     }
 
-    searchInput.addEventListener('input', renderList);
+    ['input', 'change', 'search', 'keyup'].forEach((eventName) => {
+      searchInput.addEventListener(eventName, renderList);
+    });
     document.getElementById('refreshBtn').addEventListener('click', loadEverything);
     window.addEventListener('online', loadEverything);
 

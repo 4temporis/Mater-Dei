@@ -433,6 +433,41 @@ export async function saveAppSettings(settings) {
 }
 
 // ---------------------------------------------------------------------------
+// Search helpers
+// ---------------------------------------------------------------------------
+
+const SEARCH_DIACRITICS = /[\u0300-\u036f]/g;
+
+// Lowercase, remove accents and punctuation so "Sny'ders", "SNYDERS" and
+// "Snydérs" all compare the same way.
+export function normalizeSearchText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(SEARCH_DIACRITICS, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export function digitsOnly(value) {
+  return String(value ?? '').replace(/\D+/g, '');
+}
+
+// Every word of the query must appear somewhere in the record, in any order,
+// so "alma snyders" finds "Alma Wilmina Snyders", "ernest ada" finds
+// "Mrs Ada Ernest", and partial names ("sny", "wil") still match.
+export function matchesSearch(fields, query) {
+  const tokens = normalizeSearchText(query).split(' ').filter(Boolean);
+  if (!tokens.length) return true;
+  const haystack = normalizeSearchText(
+    (Array.isArray(fields) ? fields : [fields])
+      .filter((value) => value !== null && value !== undefined && value !== '')
+      .join(' ')
+  );
+  return tokens.every((token) => haystack.includes(token));
+}
+
+// ---------------------------------------------------------------------------
 // Parishioners
 // ---------------------------------------------------------------------------
 
