@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/tailwind.css" />
 </head>
-<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased pb-24">
-  <header class="sticky top-0 z-40 bg-primary text-white shadow-md">
+<body class="min-h-screen bg-parchment font-sans text-on-surface antialiased pb-[calc(6rem_+_var(--safe-bottom))]">
+  <header class="sticky top-0 z-40 bg-primary text-white shadow-md safe-top">
     <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
       <a href="../index.html" class="flex items-center gap-2 min-w-0">
         <span class="material-symbols-outlined text-2xl text-primary-fixed-dim">church</span>
@@ -217,7 +217,7 @@
   </main>
 
   <!-- Parishioner modal -->
-  <div id="parishionerModal" class="hidden fixed inset-0 z-50 bg-black/40 p-3 sm:p-6 overflow-y-auto">
+  <div id="parishionerModal" class="hidden fixed inset-0 z-50 bg-black/40 safe-modal overflow-y-auto">
     <div class="max-w-xl mx-auto my-4 bg-white rounded-2xl shadow-xl overflow-hidden">
       <div class="sticky top-0 bg-white border-b border-parchment-outline px-4 py-3 flex items-center justify-between">
         <h2 id="modalTitle" class="font-serif text-base font-bold text-primary">Add parishioner</h2>

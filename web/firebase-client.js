@@ -36,7 +36,7 @@ import {
   sendPasswordResetEmail,
   deleteUser
 } from 'firebase/auth';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, SystemBars, SystemBarType, SystemBarsStyle } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { App as CapacitorApp } from '@capacitor/app';
 
@@ -314,6 +314,39 @@ export async function initNativeShell() {
       CapacitorApp.exitApp();
     }
   });
+}
+
+/**
+ * Android 15+ (targetSdk 35+) draws the web view edge-to-edge behind the status
+ * and navigation bars. Layout spacing comes from the --safe-area-inset-* values
+ * Capacitor injects (see web/input.css); this keeps the clock and gesture bar
+ * legible by matching the icon colour to the header behind each bar.
+ */
+export async function styleSystemBars() {
+  if (!isNativeApp()) return;
+  try {
+    const header = document.querySelector('header');
+    const darkHeader = !!header && header.classList.contains('bg-primary');
+    await SystemBars.setStyle({
+      bar: SystemBarType.StatusBar,
+      style: darkHeader ? SystemBarsStyle.Dark : SystemBarsStyle.Light
+    });
+    await SystemBars.setStyle({
+      bar: SystemBarType.NavigationBar,
+      style: SystemBarsStyle.Light
+    });
+  } catch (err) {
+    console.warn('System bar styling unavailable:', err);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  // Runs on every page, including login/signup which skip initNativeShell().
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', styleSystemBars, { once: true });
+  } else {
+    styleSystemBars();
+  }
 }
 
 export async function registerPushNotifications(user) {

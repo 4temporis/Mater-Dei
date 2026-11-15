@@ -38413,6 +38413,30 @@ async function initNativeShell() {
     }
   });
 }
+async function styleSystemBars() {
+  if (!isNativeApp()) return;
+  try {
+    const header = document.querySelector("header");
+    const darkHeader = !!header && header.classList.contains("bg-primary");
+    await SystemBars.setStyle({
+      bar: SystemBarType.StatusBar,
+      style: darkHeader ? SystemBarsStyle.Dark : SystemBarsStyle.Light
+    });
+    await SystemBars.setStyle({
+      bar: SystemBarType.NavigationBar,
+      style: SystemBarsStyle.Light
+    });
+  } catch (err) {
+    console.warn("System bar styling unavailable:", err);
+  }
+}
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", styleSystemBars, { once: true });
+  } else {
+    styleSystemBars();
+  }
+}
 async function registerPushNotifications(user) {
   if (!isNativeApp() || !user) return;
   try {
@@ -38866,6 +38890,7 @@ export {
   signOutUser,
   signUpWithInvite,
   startOfTodayIso,
+  styleSystemBars,
   subscribeInbox,
   telUrl,
   toDateInputValue,
