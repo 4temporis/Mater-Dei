@@ -80,6 +80,27 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------------
+    // Parishioner change requests (minister edits waiting for admin approval)
+    // ---------------------------------------------------------------------
+    match /changeRequests/{requestId} {
+      allow read: if isActiveUser();
+
+      // Ministers may only file requests as themselves, and only as pending.
+      allow create: if isActiveUser()
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // Only the parish office can approve or decline a request.
+      allow update: if isAdmin();
+
+      // Admins can tidy up; a minister can withdraw their own open request.
+      allow delete: if isAdmin()
+        || (isActiveUser()
+            && resource.data.requestedBy == request.auth.uid
+            && resource.data.status == 'pending');
+    }
+
+    // ---------------------------------------------------------------------
     // Visits
     // ---------------------------------------------------------------------
     match /visits/{visitId} {

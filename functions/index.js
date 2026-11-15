@@ -100,3 +100,83 @@ exports.notifyMinisters = onDocumentCreated('messages/{messageId}', async (event
     )
   );
 });
+
+// Notifies the parish office when a minister submits a change to a parishioner
+// record. The record itself is only updated after an admin approves the request
+// in the Admin Console (see approveChangeRequest in web/firebase-client.js).
+exports.notifyAdminsOnChangeRequest = onDocumentCreated(
+  'changeRequests/{requestId}',
+  async (event) => {
+    const request = event.data?.data();
+    if (!request || request.status !== 'pending') return;
+
+    const snap = await db
+      .collection('users')
+      .where('role', '==', 'admin')
+      .where('active', '==', true)
+      .get();
+    const admins = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const tokens = [
+      ...new Set(admins.flatMap((user) => (Array.isArray(user.fcmTokens) ? user.fcmTokens : [])))
+    ].filter(Boolean);
+
+    if (!tokens.length) {
+      console.log(`No admin push tokens for change request ${event.params.requestId}.`);
+      return;
+    }
+
+    const fields = (request.summary || []).map((row) => row.label).slice(0, 4).join(', ');
+    const response = await getMessaging().sendEachForMulticast({
+      tokens,
+      notification: {
+        title: `Change request: ${request.parishionerName || 'Parishioner'}`,
+        body: `${request.requestedByName || 'A minister'} suggested ${fields || 'an update'}. Tap to review.`
+      },
+      data: {
+        type: 'changeRequest',
+        requestId: event.params.requestId,
+        parishionerId: request.parishionerId || ''
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'parish_admin',
+          color: '#1b365d',
+          sound: 'default'
+        }
+      },
+      apns: {
+        payload: {
+          aps: { sound: 'default', badge: 1 }
+        }
+      }
+    });
+
+    console.log(
+      `Change request ${event.params.requestId}: ${response.successCount} sent, ${response.failureCount} failed.`
+    );
+
+    const removals = new Map();
+    response.responses.forEach((result, index) => {
+      if (result.success) return;
+      if (!INVALID_TOKEN_CODES.has(result.error?.code)) return;
+      const token = tokens[index];
+      admins.forEach((user) => {
+        if (Array.isArray(user.fcmTokens) && user.fcmTokens.includes(token)) {
+          if (!removals.has(user.id)) removals.set(user.id, []);
+          removals.get(user.id).push(token);
+        }
+      });
+    });
+
+    await Promise.all(
+      [...removals.entries()].map(([uid, staleTokens]) =>
+        db
+          .collection('users')
+          .doc(uid)
+          .update({ fcmTokens: FieldValue.arrayRemove(...staleTokens) })
+          .catch((err) => console.warn(`Could not prune tokens for ${uid}:`, err.message))
+      )
+    );
+  }
+);

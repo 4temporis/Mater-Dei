@@ -168,10 +168,40 @@ minister and record ID. So `alma snyders` finds "Alma Wilmina Snyders",
 Matching ignores accents, punctuation and capitalisation (see `matchesSearch`
 in `web/firebase-client.js`).
 
+### Hiding the bottom navigation while scrolling
+
+Every page with a bottom tab bar gets the shared behaviour from
+`initAutoHideBottomNav()` (called by `initNativeShell()`). The bar slides away
+while you scroll down and returns as soon as you scroll up, reach the top or
+focus a field. It is CSS-only in `web/input.css` (`.bottom-nav` /
+`.bottom-nav--hidden`) and respects `prefers-reduced-motion`.
+
+### Minister change requests
+
+Ministers never edit a parishioner record directly. On the parishioner page
+they tap **Edit my details**, change the fields and tap **Send change request**:
+
+1. `submitChangeRequest()` writes a `pending` document to `changeRequests` with
+   a field-by-field summary, the proposed values and a snapshot of the record.
+2. The parish office sees a banner on the dashboard, a badge on the **Requests**
+   tab in the Admin Console and (when push is configured) a notification on the
+   `parish_admin` channel.
+3. An admin opens **Requests**, reviews the summary, and taps **Approve & save**.
+   Only then does `approveChangeRequest()` update the parishioner, keeping the
+   live visit and minister-assignment fields intact.
+4. **Decline** stores an optional reason and leaves the record untouched. A
+   minister can withdraw their own request while it is pending.
+
+The `changeRequests` rules in `firestore.rules` restrict creation to the
+signed-in minister and updates to admins; deploy them with
+`firebase deploy --only firestore:rules`.
+
 ## Push notifications (optional)
 
 Push notifications use Firebase Cloud Messaging through the `notifyMinisters`
-Cloud Function:
+Cloud Function (new parish messages) and `notifyAdminsOnChangeRequest` (a
+minister submitted a change request). Channel `parish_messages` carries the
+messages; `parish_admin` carries the approval alerts:
 
 ```powershell
 npm run functions:install

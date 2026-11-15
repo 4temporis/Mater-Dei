@@ -53,9 +53,15 @@
       </div>
     </section>
 
-    <nav class="grid grid-cols-4 bg-white rounded-xl border border-parchment-outline shadow-sm overflow-hidden">
+    <nav class="grid grid-cols-5 bg-white rounded-xl border border-parchment-outline shadow-sm overflow-hidden">
       <button data-tab="parishioners" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-primary text-primary bg-[#eef1f9]">
-        <span class="material-symbols-outlined text-xl">groups</span>Parishioners
+        <span class="material-symbols-outlined text-xl">groups</span>People
+      </button>
+      <button data-tab="requests" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-transparent text-on-surface-variant">
+        <span class="relative">
+          <span class="material-symbols-outlined text-xl">fact_check</span>
+          <span id="requestTabBadge" class="hidden absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-white text-[9px] font-bold flex items-center justify-center"></span>
+        </span>Requests
       </button>
       <button data-tab="ministers" class="tab-btn flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold border-b-2 border-transparent text-on-surface-variant">
         <span class="material-symbols-outlined text-xl">volunteer_activism</span>Ministers
@@ -162,6 +168,22 @@
         <div id="sentList" class="space-y-2">
           <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading messages…</div>
         </div>
+      </div>
+    </section>
+
+    <!-- CHANGE REQUESTS TAB -->
+    <section id="tab-requests" class="tab-panel hidden space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="font-serif text-lg font-bold text-primary">Change requests</h2>
+          <p class="text-xs text-on-surface-variant">Ministers can suggest corrections. Nothing changes until you approve it here.</p>
+        </div>
+        <button id="btnRefreshRequests" class="inline-flex items-center gap-1 px-3 py-2.5 rounded-lg border border-parchment-outline bg-white text-primary text-xs font-semibold active:scale-95 transition whitespace-nowrap">
+          <span class="material-symbols-outlined text-base">refresh</span>Refresh
+        </button>
+      </div>
+      <div id="requestList" class="space-y-2.5">
+        <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading change requests…</div>
       </div>
     </section>
 
@@ -357,6 +379,9 @@
       getAppSettings,
       saveAppSettings,
       subscribeInbox,
+      listChangeRequests,
+      approveChangeRequest,
+      rejectChangeRequest,
       unreadMessages,
       formatDate,
       formatDateTime,
@@ -373,6 +398,7 @@
     let ministers = [];
     let invites = [];
     let sentMessages = [];
+    let changeRequests = [];
 
     function showToast(message, isError = false) {
       const toast = document.getElementById('toast');
@@ -535,6 +561,7 @@
     }
 
     document.getElementById('btnAddParishioner').addEventListener('click', () => openParishionerModal());
+    document.getElementById('btnRefreshRequests').addEventListener('click', loadChangeRequests);
     document.getElementById('btnCloseModal').addEventListener('click', closeParishionerModal);
     document.getElementById('btnCancelModal').addEventListener('click', closeParishionerModal);
     ['input', 'change', 'search', 'keyup'].forEach((eventName) => {
@@ -819,6 +846,109 @@
     });
 
     // -----------------------------------------------------------------------
+    // Change requests (minister edits awaiting approval)
+    // -----------------------------------------------------------------------
+
+    function renderRequests() {
+      const list = document.getElementById('requestList');
+      const badge = document.getElementById('requestTabBadge');
+      badge.textContent = changeRequests.length > 9 ? '9+' : String(changeRequests.length);
+      badge.classList.toggle('hidden', changeRequests.length === 0);
+
+      if (!changeRequests.length) {
+        list.innerHTML = `<div class="bg-white rounded-xl p-8 text-center border border-parchment-outline">
+          <span class="material-symbols-outlined text-4xl text-outline-variant">task_alt</span>
+          <p class="text-sm font-semibold text-primary mt-2">No change requests waiting</p>
+          <p class="text-xs text-on-surface-variant mt-1">When a minister suggests an edit it appears here for approval.</p>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = changeRequests.map((request) => `
+        <article class="bg-white rounded-xl border border-parchment-outline shadow-sm p-4 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <a href="../parishioner_sacramental_profile/code.html?id=${encodeURIComponent(request.parishionerId)}" class="font-serif font-bold text-primary hover:text-secondary">${escapeHtml(request.parishionerName || 'Parishioner')}</a>
+              <p class="text-[11px] text-on-surface-variant mt-0.5">Requested by ${escapeHtml(request.requestedByName || 'a minister')} · ${escapeHtml(formatDateTime(request.createdAt) || 'just now')}</p>
+            </div>
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed whitespace-nowrap">Pending</span>
+          </div>
+          <ul class="space-y-1 rounded-lg bg-parchment-container p-2.5">
+            ${(request.summary || []).map((row) => `
+              <li class="text-[11px] text-on-surface">
+                <span class="font-semibold">${escapeHtml(row.label)}:</span>
+                <span class="text-on-surface-variant line-through">${escapeHtml(row.from || 'empty')}</span>
+                <span class="material-symbols-outlined text-[12px] align-middle">arrow_forward</span>
+                <span class="font-semibold text-tertiary">${escapeHtml(row.to || 'empty')}</span>
+              </li>`).join('')}
+          </ul>
+          ${request.note ? `<p class="text-[11px] italic text-on-surface-variant">“${escapeHtml(request.note)}”</p>` : ''}
+          <div class="flex gap-2">
+            <button data-reject-id="${escapeHtml(request.id)}" class="flex-1 h-10 rounded-lg border border-error text-error text-xs font-bold active:scale-[0.98] transition">Decline</button>
+            <button data-approve-id="${escapeHtml(request.id)}" class="flex-1 h-10 rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-[0.98] transition">
+              <span class="material-symbols-outlined text-base">check</span>Approve &amp; save
+            </button>
+          </div>
+        </article>`).join('');
+
+      list.querySelectorAll('[data-approve-id]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const request = changeRequests.find((r) => r.id === button.dataset.approveId);
+          if (!request) return;
+          if (!window.confirm(`Approve the changes to ${request.parishionerName}? The parishioner record will be updated.`)) return;
+          button.disabled = true;
+          try {
+            await approveChangeRequest(request.id, {
+              uid: session.user.uid,
+              displayName: session.profile.displayName
+            });
+            showToast(`${request.parishionerName} updated.`);
+            await Promise.all([loadChangeRequests(), loadParishioners()]);
+            loadStats();
+          } catch (err) {
+            console.error(err);
+            showToast(err.message || 'Could not approve this request.', true);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+
+      list.querySelectorAll('[data-reject-id]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const request = changeRequests.find((r) => r.id === button.dataset.rejectId);
+          if (!request) return;
+          const reason = window.prompt(`Decline the changes to ${request.parishionerName}? Add an optional note for the minister:`);
+          if (reason === null) return;
+          button.disabled = true;
+          try {
+            await rejectChangeRequest(request.id, {
+              reason,
+              reviewer: { uid: session.user.uid, displayName: session.profile.displayName }
+            });
+            showToast('Change request declined.');
+            await loadChangeRequests();
+          } catch (err) {
+            console.error(err);
+            showToast('Could not decline this request.', true);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+    }
+
+    async function loadChangeRequests() {
+      try {
+        changeRequests = await listChangeRequests({ status: 'pending' });
+      } catch (err) {
+        console.warn('Could not load change requests:', err);
+        changeRequests = [];
+      }
+      renderRequests();
+    }
+
+    // -----------------------------------------------------------------------
     // Loaders
     // -----------------------------------------------------------------------
 
@@ -865,14 +995,17 @@
       registerPushNotifications(session.user);
 
       const hash = (window.location.hash || '#parishioners').replace('#', '');
-      switchTab(['parishioners', 'ministers', 'messages', 'settings'].includes(hash) ? hash : 'parishioners');
+      switchTab(['parishioners', 'requests', 'ministers', 'messages', 'settings'].includes(hash) ? hash : 'parishioners');
 
       document.querySelectorAll('.tab-btn').forEach((button) => {
-        button.addEventListener('click', () => switchTab(button.dataset.tab));
+        button.addEventListener('click', () => {
+          switchTab(button.dataset.tab);
+          if (button.dataset.tab === 'requests') loadChangeRequests();
+        });
       });
 
       try {
-        await Promise.all([loadMinisters(), loadInvites(), loadSettings()]);
+        await Promise.all([loadMinisters(), loadInvites(), loadSettings(), loadChangeRequests()]);
         await loadParishioners();
         await loadMessages();
         await loadStats();

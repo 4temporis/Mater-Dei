@@ -306,6 +306,7 @@ export function isNativeApp() {
 }
 
 export async function initNativeShell() {
+  initAutoHideBottomNav();
   if (!isNativeApp()) return;
   CapacitorApp.addListener('backButton', ({ canGoBack }) => {
     if (canGoBack || window.history.length > 1) {
@@ -314,6 +315,58 @@ export async function initNativeShell() {
       CapacitorApp.exitApp();
     }
   });
+}
+
+/**
+ * Hides the fixed bottom navigation while the user scrolls down and brings it
+ * back on any upward scroll, at the top of the page, and when a form field is
+ * focused (so the on-screen keyboard never covers the tabs).
+ */
+export function initAutoHideBottomNav() {
+  const nav = document.querySelector('nav.fixed.bottom-0');
+  if (!nav || nav.dataset.autoHide === 'on') return;
+  nav.dataset.autoHide = 'on';
+  nav.classList.add('bottom-nav');
+
+  let lastY = window.scrollY || 0;
+  let ticking = false;
+
+  const show = () => nav.classList.remove('bottom-nav--hidden');
+  const hide = () => nav.classList.add('bottom-nav--hidden');
+
+  const update = () => {
+    ticking = false;
+    const y = Math.max(0, window.scrollY || 0);
+    const delta = y - lastY;
+    lastY = y;
+    if (Math.abs(delta) < 6) return;
+
+    const atTop = y <= 48;
+    const atBottom =
+      y + window.innerHeight >= (document.documentElement.scrollHeight || 0) - 32;
+
+    if (atTop || atBottom || delta < 0) show();
+    else hide();
+  };
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    },
+    { passive: true }
+  );
+
+  window.addEventListener('resize', show);
+  document.addEventListener('focusin', (event) => {
+    if (event.target.closest('input, textarea, select')) {
+      show();
+      lastY = window.scrollY || 0;
+    }
+  });
+  show();
 }
 
 /**
@@ -368,6 +421,14 @@ export async function registerPushNotifications(user) {
         visibility: 1,
         vibration: true
       });
+      await PushNotifications.createChannel({
+        id: 'parish_admin',
+        name: 'Parish Office alerts',
+        description: 'Change requests waiting for admin approval',
+        importance: 4,
+        visibility: 1,
+        vibration: true
+      });
     } catch (channelError) {
       console.warn('Notification channel:', channelError);
     }
@@ -387,7 +448,12 @@ export async function registerPushNotifications(user) {
       console.warn('Push registration error:', err);
     });
 
-    PushNotifications.addListener('pushNotificationActionPerformed', () => {
+    PushNotifications.addListener('pushNotificationActionPerformed', (event) => {
+      const type = event?.notification?.data?.type;
+      if (type === 'changeRequest') {
+        window.location.href = appUrl('admin_sunday_visit_roster/code.html#requests');
+        return;
+      }
       window.location.href = appUrl('messages/code.html');
     });
 
@@ -581,6 +647,161 @@ export async function assignParishionerMinister(parishionerId, ministerUid, mini
 
 export async function deleteParishioner(id) {
   await deleteDoc(doc(db, 'parishioners', id));
+}
+
+// ---------------------------------------------------------------------------
+// Parishioner change requests
+// Ministers never write parishioner records directly: they submit a request,
+// and the parish office approves it before the record is updated.
+// ---------------------------------------------------------------------------
+
+const CHANGE_FIELD_LABELS = {
+  name: 'Full name',
+  age: 'Age',
+  status: 'Status',
+  guild: 'Guild / group',
+  phone: 'Phone',
+  sector: 'Sector',
+  preferredVisitTime: 'Preferred visit time',
+  notes: 'Pastoral notes',
+  street: 'Street address',
+  city: 'City',
+  state: 'Province / state',
+  zip: 'Postal code',
+  gateCode: 'Gate / access code',
+  accessNotes: 'Access notes',
+  dietary: 'Dietary needs',
+  mobility: 'Mobility',
+  prayerIntentions: 'Prayer intentions',
+  baptism: 'Baptism',
+  firstCommunion: 'First Communion',
+  confirmation: 'Confirmation',
+  anointingDate: 'Last anointed',
+  anointingNotes: 'Anointing notes'
+};
+
+function flattenParishioner(value = {}) {
+  const address = value.address || {};
+  const sacraments = value.sacramentalLife || {};
+  const care = value.pastoralCare || {};
+  const sacramentValue = (entry) =>
+    `${entry?.verified ? 'Yes' : 'No'}${entry?.year ? ` (${entry.year})` : ''}`;
+
+  return {
+    name: value.name || '',
+    age: value.age == null || value.age === '' ? '' : String(value.age),
+    status: value.status || '',
+    guild: value.guild || '',
+    phone: value.phone || '',
+    sector: value.sector || '',
+    preferredVisitTime: value.preferredVisitTime || '',
+    notes: value.notes || '',
+    street: address.street || '',
+    city: address.city || '',
+    state: address.state || '',
+    zip: address.zip || '',
+    gateCode: address.gateCode || '',
+    accessNotes: address.accessNotes || '',
+    dietary: care.dietary || '',
+    mobility: care.mobility || '',
+    prayerIntentions: care.prayerIntentions || '',
+    baptism: sacramentValue(sacraments.baptism),
+    firstCommunion: sacramentValue(sacraments.firstCommunion),
+    confirmation: sacramentValue(sacraments.confirmation),
+    anointingDate: sacraments.anointingOfSick?.lastDate || '',
+    anointingNotes: sacraments.anointingOfSick?.notes || ''
+  };
+}
+
+/** Field-by-field list of what a minister changed (used by both app and admin). */
+export function buildChangeSummary(before = {}, after = {}) {
+  const oldValues = flattenParishioner(before);
+  const newValues = flattenParishioner(after);
+  return Object.keys(CHANGE_FIELD_LABELS)
+    .filter((field) => oldValues[field] !== newValues[field])
+    .map((field) => ({
+      field,
+      label: CHANGE_FIELD_LABELS[field],
+      from: oldValues[field],
+      to: newValues[field]
+    }));
+}
+
+export async function submitChangeRequest({ before, after, user, note = '' }) {
+  if (!after?.name?.trim()) throw new Error('A parishioner name is required.');
+  const summary = buildChangeSummary(before, after);
+  if (!summary.length) throw new Error('Nothing has changed yet.');
+
+  const ref = await addDoc(collection(db, 'changeRequests'), {
+    parishionerId: before.id,
+    parishionerName: after.name.trim(),
+    requestedBy: user?.uid || '',
+    requestedByName: user?.displayName || user?.email || 'Eucharistic Minister',
+    requestedByEmail: user?.email || '',
+    note: String(note || '').trim(),
+    status: 'pending',
+    summary,
+    proposed: normalizeParishioner(after),
+    snapshot: normalizeParishioner(before),
+    createdAt: serverTimestamp()
+  });
+  return ref.id;
+}
+
+export async function listChangeRequests({ status = 'pending' } = {}) {
+  const base = collection(db, 'changeRequests');
+  const snap = status
+    ? await getDocs(query(base, where('status', '==', status)))
+    : await getDocs(base);
+  return sortByCreatedAtDesc(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+}
+
+export async function getPendingChangeRequests(parishionerId = '') {
+  const pending = await listChangeRequests({ status: 'pending' });
+  return parishionerId
+    ? pending.filter((request) => request.parishionerId === parishionerId)
+    : pending;
+}
+
+export async function approveChangeRequest(requestId, reviewer = {}) {
+  const ref = doc(db, 'changeRequests', requestId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('That change request no longer exists.');
+  const request = snap.data();
+  if (request.status !== 'pending') throw new Error('That request has already been reviewed.');
+
+  const person = await getParishioner(request.parishionerId);
+  if (!person) throw new Error('The parishioner record no longer exists.');
+
+  await updateParishioner(request.parishionerId, {
+    ...request.proposed,
+    // Never let an approval overwrite the live visit/assignment bookkeeping.
+    lastVisitAt: person.lastVisitAt || '',
+    assignedMinisterId: person.assignedMinisterId || '',
+    assignedMinisterName: person.assignedMinisterName || ''
+  });
+
+  await updateDoc(ref, {
+    status: 'approved',
+    reviewedBy: reviewer.uid || '',
+    reviewedByName: reviewer.displayName || reviewer.email || 'Parish Admin',
+    reviewedAt: serverTimestamp()
+  });
+  return request.parishionerId;
+}
+
+export async function rejectChangeRequest(requestId, { reason = '', reviewer = {} } = {}) {
+  await updateDoc(doc(db, 'changeRequests', requestId), {
+    status: 'rejected',
+    reviewNote: String(reason || '').trim(),
+    reviewedBy: reviewer.uid || '',
+    reviewedByName: reviewer.displayName || reviewer.email || 'Parish Admin',
+    reviewedAt: serverTimestamp()
+  });
+}
+
+export async function withdrawChangeRequest(requestId) {
+  await deleteDoc(doc(db, 'changeRequests', requestId));
 }
 
 // ---------------------------------------------------------------------------

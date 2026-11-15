@@ -182,7 +182,7 @@
             <span class="material-symbols-outlined text-primary">badge</span>
             <h3 class="font-serif text-base font-bold text-primary">Ministry details</h3>
           </div>
-          <span class="text-[10px] text-outline">Admin only</span>
+          <span class="text-[10px] text-outline">Parish record</span>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -234,6 +234,34 @@
       </section>
 
       <div id="toast" class="hidden p-3 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-center text-sm shadow"></div>
+
+      <a id="adminPendingNotice" href="../admin_sunday_visit_roster/code.html#requests"
+        class="hidden items-start gap-2 rounded-xl border border-secondary/40 bg-secondary-fixed/60 p-3 text-sm text-on-secondary-fixed">
+        <span class="material-symbols-outlined text-base">pending_actions</span>
+        <span id="adminPendingText">A change request is waiting for review in the Admin Console.</span>
+      </a>
+
+      <section id="requestPanel" class="hidden bg-white rounded-xl p-4 shadow-sm border border-parchment-outline space-y-3">
+        <div class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-secondary">fact_check</span>
+          <div class="min-w-0">
+            <h3 class="font-serif text-base font-bold text-primary">Request a change</h3>
+            <p class="text-[11px] text-on-surface-variant">Edits are sent to the parish office. The record only changes once an admin approves your request.</p>
+          </div>
+        </div>
+        <div id="pendingRequestBox" class="hidden space-y-2 rounded-lg border border-secondary/30 bg-secondary-fixed/50 p-3"></div>
+        <div class="flex gap-2">
+          <button id="btnStartEdit" type="button" class="flex-1 h-11 rounded-lg border border-primary text-primary text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition disabled:opacity-50">
+            <span class="material-symbols-outlined text-lg">edit_note</span>Edit my details
+          </button>
+          <button id="btnCancelEdit" type="button" class="hidden flex-1 h-11 rounded-lg border border-parchment-outline text-on-surface-variant text-sm font-semibold">Cancel</button>
+        </div>
+        <button id="btnSendRequest" type="submit" class="hidden w-full h-12 bg-secondary text-white rounded-lg font-semibold text-sm shadow items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined">send</span>Send change request
+        </button>
+        <p id="editHint" class="hidden text-[11px] text-on-surface-variant text-center">Change the fields above, then send your request.</p>
+      </section>
+
       <div id="adminActions" class="hidden space-y-2 pt-1">
         <button id="btnSave" type="submit" class="w-full h-12 bg-primary text-white rounded-lg font-semibold text-sm shadow flex items-center justify-center gap-2 active:scale-[0.98] transition">
           <span class="material-symbols-outlined">save</span>
@@ -244,9 +272,6 @@
           Remove parishioner
         </button>
       </div>
-      <p id="readOnlyNote" class="text-center text-xs text-on-surface-variant pt-1">
-        This record is read-only. Ask the parish office to make changes.
-      </p>
     </form>
   </main>
 
@@ -261,6 +286,9 @@
       assignParishionerMinister,
       listMinisters,
       getVisitsForParishioner,
+      submitChangeRequest,
+      getPendingChangeRequests,
+      withdrawChangeRequest,
       formatDate,
       formatDateTime,
       escapeHtml,
@@ -276,6 +304,9 @@
     const form = document.getElementById('profileForm');
     let current = null;
     let sessionProfile = null;
+    let sessionUser = null;
+    let pendingRequest = null;
+    let editing = false;
 
     document.getElementById('btnBack').addEventListener('click', () => {
       if (window.history.length > 1) window.history.back();
@@ -422,9 +453,141 @@
       setTimeout(() => toast.classList.add('hidden'), 3500);
     }
 
+    // -----------------------------------------------------------------------
+    // Minister change requests
+    // -----------------------------------------------------------------------
+
+    function setEditable(enabled) {
+      editing = enabled;
+      form.querySelectorAll('input, select, textarea').forEach((field) => {
+        field.disabled = !enabled;
+      });
+      // Assignment stays with the parish office.
+      document.getElementById('assignedMinister').disabled = true;
+
+      document.getElementById('btnStartEdit').classList.toggle('hidden', enabled);
+      document.getElementById('btnCancelEdit').classList.toggle('hidden', !enabled);
+      const send = document.getElementById('btnSendRequest');
+      send.classList.toggle('hidden', !enabled);
+      send.classList.toggle('flex', enabled);
+      document.getElementById('editHint').classList.toggle('hidden', !enabled);
+      if (!enabled) setFormValues(current);
+    }
+
+    function summaryList(summary = []) {
+      return `<ul class="space-y-1">
+        ${summary.map((row) => `
+          <li class="text-[11px] text-on-surface">
+            <span class="font-semibold">${escapeHtml(row.label)}:</span>
+            <span class="text-on-surface-variant line-through">${escapeHtml(row.from || 'empty')}</span>
+            <span class="material-symbols-outlined text-[12px] align-middle">arrow_forward</span>
+            <span class="font-semibold text-tertiary">${escapeHtml(row.to || 'empty')}</span>
+          </li>`).join('')}
+      </ul>`;
+    }
+
+    async function loadPendingRequest() {
+      const box = document.getElementById('pendingRequestBox');
+      const startBtn = document.getElementById('btnStartEdit');
+      try {
+        const [request] = await getPendingChangeRequests(current.id);
+        pendingRequest = request || null;
+      } catch (err) {
+        console.warn('Could not load change requests:', err);
+        pendingRequest = null;
+      }
+
+      if (!pendingRequest) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        startBtn.disabled = false;
+        return;
+      }
+
+      startBtn.disabled = true;
+      if (editing) setEditable(false);
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-base text-secondary">hourglass_top</span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-primary">Awaiting parish office approval</p>
+            <p class="text-[11px] text-on-surface-variant">Sent ${escapeHtml(formatDateTime(pendingRequest.createdAt) || 'just now')}${pendingRequest.requestedByName ? ` by ${escapeHtml(pendingRequest.requestedByName)}` : ''}.</p>
+          </div>
+        </div>
+        ${summaryList(pendingRequest.summary)}
+        ${pendingRequest.note ? `<p class="text-[11px] italic text-on-surface-variant">“${escapeHtml(pendingRequest.note)}”</p>` : ''}
+        <button id="btnWithdrawRequest" type="button" class="text-[11px] font-semibold text-error underline">Withdraw this request</button>`;
+
+      box.querySelector('#btnWithdrawRequest').addEventListener('click', async () => {
+        if (!window.confirm('Withdraw your change request?')) return;
+        try {
+          await withdrawChangeRequest(pendingRequest.id);
+          pendingRequest = null;
+          await loadPendingRequest();
+          showToast('Change request withdrawn.');
+        } catch (err) {
+          console.error(err);
+          showToast('Could not withdraw the request.', true);
+        }
+      });
+    }
+
+    async function loadAdminPendingNotice() {
+      const notice = document.getElementById('adminPendingNotice');
+      try {
+        const pending = await getPendingChangeRequests(current.id);
+        if (!pending.length) {
+          notice.classList.add('hidden');
+          notice.classList.remove('flex');
+          return;
+        }
+        document.getElementById('adminPendingText').textContent = pending.length === 1
+          ? `${pending[0].requestedByName || 'A minister'} requested a change — review it in the Admin Console.`
+          : `${pending.length} change requests are waiting — review them in the Admin Console.`;
+        notice.classList.remove('hidden');
+        notice.classList.add('flex');
+      } catch (err) {
+        console.warn('Could not load change requests:', err);
+      }
+    }
+
+    document.getElementById('btnStartEdit').addEventListener('click', () => {
+      setEditable(true);
+      document.getElementById('requestPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('btnCancelEdit').addEventListener('click', () => setEditable(false));
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!current || sessionProfile?.role !== 'admin') return;
+      if (!current) return;
+
+      if (sessionProfile?.role !== 'admin') {
+        if (!editing) return;
+        const sendBtn = document.getElementById('btnSendRequest');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Sending…';
+        try {
+          const data = gatherFormData();
+          if (!data.name) throw new Error('A parishioner name is required.');
+          await submitChangeRequest({
+            before: current,
+            after: { ...data, id: current.id },
+            user: sessionUser
+          });
+          setEditable(false);
+          await loadPendingRequest();
+          showToast('Change request sent to the parish office.');
+        } catch (err) {
+          console.error(err);
+          showToast(err.message || 'Could not send the change request.', true);
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<span class="material-symbols-outlined">send</span> Send change request';
+        }
+        return;
+      }
+
       const btn = document.getElementById('btnSave');
       btn.disabled = true;
       btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving…';
@@ -461,6 +624,7 @@
       const session = await requireSession();
       if (!session) return;
       sessionProfile = session.profile;
+      sessionUser = session.user;
       applySessionUI(session.profile);
       initNativeShell();
 
@@ -484,12 +648,13 @@
 
         const isAdmin = session.profile.role === 'admin';
         document.getElementById('adminActions').classList.toggle('hidden', !isAdmin);
-        document.getElementById('readOnlyNote').classList.toggle('hidden', isAdmin);
 
-        if (!isAdmin) {
-          form.querySelectorAll('input, select, textarea').forEach((field) => {
-            field.disabled = true;
-          });
+        if (isAdmin) {
+          await loadAdminPendingNotice();
+        } else {
+          document.getElementById('requestPanel').classList.remove('hidden');
+          setEditable(false);
+          await loadPendingRequest();
         }
 
         document.getElementById('loadingBox').classList.add('hidden');

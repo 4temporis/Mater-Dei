@@ -97,4 +97,21 @@
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
   }
+  /*
+   * Bottom navigation slides away while the page scrolls down and returns as
+   * soon as the user scrolls up (initAutoHideBottomNav in firebase-client.js).
+   * Translating the whole bar also moves its safe-area padding off screen.
+   */
+  .bottom-nav {
+    transition: transform 0.22s ease;
+    will-change: transform;
+  }
+  .bottom-nav--hidden {
+    transform: translateY(110%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bottom-nav {
+      transition: none;
+    }
+  }
 }
