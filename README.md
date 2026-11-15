@@ -136,6 +136,29 @@ Copy `app-release.apk` (or `app-debug.apk`) to the phone, tap it, and allow
 "Install unknown apps" for the file manager or browser when prompted. The package
 id is `org.materdei.pastoraltracker`.
 
+### Mobile safe areas (status bar and navigation bar)
+
+The app targets Android 15+ (targetSdk 36), which forces edge-to-edge drawing, so
+the web view runs behind the phone's system bars. Typical Android dimensions are
+a 24dp status bar (28–32dp around a camera cutout), a 48dp navigation bar with
+3-button navigation, and a ~24dp inset for gesture navigation, but OEMs and
+landscape differ — so nothing is hard-coded.
+
+Instead, `web/input.css` consumes the runtime insets:
+
+- Capacitor 8 injects `--safe-area-inset-top/right/bottom/left` from
+  `WindowInsets` (`SystemBars` plugin, configured in `capacitor.config.json`).
+- `env(safe-area-inset-*)` is used as the fallback for iOS and newer WebViews.
+- `--safe-top` / `--safe-bottom` take the `max()` of both, and `.safe-top`,
+  `.safe-bottom` and `.safe-modal` apply them to headers, bottom navigation and
+  dialogs. Page bodies reserve `calc(6rem + var(--safe-bottom))` so content is
+  never hidden behind the fixed bottom nav.
+- `styleSystemBars()` in `web/firebase-client.js` picks light icons over the dark
+  blue header and dark icons over light headers.
+
+When changing the layout, keep new fixed/sticky bars inside these utilities
+instead of adding fixed pixel padding.
+
 ## Push notifications (optional)
 
 Push notifications use Firebase Cloud Messaging through the `notifyMinisters`
