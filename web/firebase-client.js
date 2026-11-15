@@ -305,16 +305,128 @@ export function isNativeApp() {
   return Capacitor.isNativePlatform();
 }
 
+let backExitArmedAt = 0;
+
+function isHomeScreen() {
+  const path = window.location.pathname.replace(/\/+$/, '');
+  return path === '' || /\/index\.html$/.test(path);
+}
+
+/** The top-most open modal/overlay, if any (pages mark them `.fixed.inset-0`). */
+function topOpenOverlay() {
+  const overlays = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(
+    (el) => !el.classList.contains('hidden') && el.getBoundingClientRect().height > 0
+  );
+  return overlays.length ? overlays[overlays.length - 1] : null;
+}
+
+/** Closes the open overlay. Returns true when something was dismissed. */
+function closeTopOverlay() {
+  const overlay = topOpenOverlay();
+  if (!overlay) return false;
+  const closer = overlay.querySelector('[data-back-close], [id^="btnClose"], [id^="btnCancel"]');
+  if (closer && !closer.disabled) {
+    closer.click();
+  } else {
+    overlay.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+  return true;
+}
+
+/** Small transient message shared by the back handler and foreground pushes. */
+export function showAppToast(message, timeout = 2200) {
+  if (typeof document === 'undefined' || !message) return;
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.setAttribute('role', 'status');
+    toast.style.cssText = [
+      'position:fixed',
+      'left:50%',
+      'transform:translateX(-50%)',
+      'bottom:calc(5.5rem + var(--safe-bottom, 0px))',
+      'max-width:calc(100% - 2rem)',
+      'background:rgba(27,54,93,0.96)',
+      'color:#fff',
+      'font-family:inherit',
+      'font-size:13px',
+      'line-height:1.35',
+      'padding:10px 16px',
+      'border-radius:12px',
+      'box-shadow:0 6px 20px rgba(0,0,0,0.25)',
+      'z-index:9999',
+      'opacity:0',
+      'transition:opacity 180ms ease',
+      'pointer-events:none',
+      'text-align:center'
+    ].join(';');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  void toast.offsetHeight;
+  toast.style.opacity = '1';
+  clearTimeout(showAppToast._timer);
+  showAppToast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+  }, timeout);
+}
+
+/**
+ * Android back button, registered on every page (including login/signup):
+ *  1. close an open modal,
+ *  2. step back through in-app history,
+ *  3. return to the dashboard when history is exhausted,
+ *  4. on the dashboard, exit the app on a second press within two seconds.
+ */
+export function initBackButton() {
+  if (!isNativeApp() || typeof document === 'undefined' || !document.body) return;
+  if (document.body.dataset.backButton === 'on') return;
+  document.body.dataset.backButton = 'on';
+
+  CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+    handleNativeBack(canGoBack);
+  });
+}
+
+/**
+ * The back-button decision, split out so it can be exercised without a device.
+ * Returns what it did: 'overlay', 'history', 'home', 'exit' or 'armed'.
+ */
+export function handleNativeBack(canGoBack = false) {
+  if (closeTopOverlay()) return 'overlay';
+
+  if (canGoBack) {
+    window.history.back();
+    return 'history';
+  }
+
+  if (!isHomeScreen()) {
+    window.location.replace(appUrl('index.html'));
+    return 'home';
+  }
+
+  const now = Date.now();
+  if (now - backExitArmedAt < 2000) {
+    backExitArmedAt = 0;
+    try {
+      const result = CapacitorApp.exitApp();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch (err) {
+      console.warn('Could not close the app:', err);
+    }
+    return 'exit';
+  }
+
+  backExitArmedAt = now;
+  showAppToast('Press back again to exit');
+  return 'armed';
+}
+
 export async function initNativeShell() {
   initAutoHideBottomNav();
-  if (!isNativeApp()) return;
-  CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-    if (canGoBack || window.history.length > 1) {
-      window.history.back();
-    } else {
-      CapacitorApp.exitApp();
-    }
-  });
+  initBackButton();
 }
 
 /**
@@ -395,10 +507,14 @@ export async function styleSystemBars() {
 
 if (typeof window !== 'undefined') {
   // Runs on every page, including login/signup which skip initNativeShell().
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', styleSystemBars, { once: true });
-  } else {
+  const boot = () => {
     styleSystemBars();
+    initBackButton();
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
   }
 }
 
@@ -429,6 +545,14 @@ export async function registerPushNotifications(user) {
         visibility: 1,
         vibration: true
       });
+      await PushNotifications.createChannel({
+        id: 'parish_route',
+        name: 'Route updates',
+        description: 'Sunday route changes made by the parish office',
+        importance: 4,
+        visibility: 1,
+        vibration: true
+      });
     } catch (channelError) {
       console.warn('Notification channel:', channelError);
     }
@@ -454,7 +578,17 @@ export async function registerPushNotifications(user) {
         window.location.href = appUrl('admin_sunday_visit_roster/code.html#requests');
         return;
       }
+      if (type === 'route') {
+        window.location.href = appUrl('minister_sunday_route_map/code.html');
+        return;
+      }
       window.location.href = appUrl('messages/code.html');
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const title = notification?.title || 'Parish update';
+      const body = notification?.body || '';
+      showAppToast(body ? `${title}: ${body}` : title);
     });
 
     await PushNotifications.register();

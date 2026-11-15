@@ -176,6 +176,23 @@ while you scroll down and returns as soon as you scroll up, reach the top or
 focus a field. It is CSS-only in `web/input.css` (`.bottom-nav` /
 `.bottom-nav--hidden`) and respects `prefers-reduced-motion`.
 
+### Back button and closing the app
+
+The Android back button is handled on every page, including login and signup, by
+`initBackButton()` in `web/firebase-client.js`. A press does the first of these
+that applies:
+
+1. closes the open minister/parishioner modal;
+2. steps back through in-app history;
+3. returns to the dashboard when there is no history left;
+4. on the dashboard, shows **Press back again to exit** — a second press within
+   two seconds closes the app (`App.exitApp()`).
+
+The earlier handler compared `window.history.length`, which never shrinks, so on
+the dashboard it kept calling `history.back()` and the app could never be closed.
+`handleNativeBack()` is exported so the behaviour can be exercised in a browser
+without a device.
+
 ### Minister change requests
 
 Ministers never edit a parishioner record directly. On the parishioner page
@@ -232,21 +249,41 @@ own account from the console, so the parish always keeps one way in.
 
 ## Push notifications (optional)
 
-Push notifications use Firebase Cloud Messaging through the `notifyMinisters`
-Cloud Function (new parish messages) and `notifyAdminsOnChangeRequest` (a
-minister submitted a change request). Channel `parish_messages` carries the
-messages; `parish_admin` carries the approval alerts:
+Push notifications use Firebase Cloud Messaging. Three Cloud Functions in
+`functions/index.js` send them:
+
+| Function | Fires when | Goes to | Channel |
+| --- | --- | --- | --- |
+| `notifyMinisters` | an admin creates a message | all active ministers, or the one selected recipient | `parish_messages` |
+| `notifyRouteUpdate` | an admin adds, removes or edits a parishioner on a minister's Sunday route | the minister who gained/lost the visit, or whose visit details changed | `parish_route` |
+| `notifyAdminsOnChangeRequest` | a minister submits a change request | all active admins | `parish_admin` |
+
+Route alerts cover: assigning a parishioner to a minister, reassigning or
+unassigning them, and changes to the preferred visit time, status or address of
+an assigned parishioner. Logging a visit does **not** trigger a notification.
+
+Because these are data messages delivered by FCM, the phone shows them even when
+the app is closed or was killed. Tapping one opens the matching screen (Messages,
+Sunday Route or Admin Console → Requests). While the app is open the notification
+is also shown as an in-app toast.
 
 ```powershell
 npm run functions:install
+firebase login --reauth
 firebase deploy --only functions
 ```
 
 Requirements:
 
-- The Firebase project must be on the **Blaze** (pay-as-you-go) plan.
+- The Firebase project must be on the **Blaze** (pay-as-you-go) plan for Cloud
+  Functions v2, with the Cloud Functions, Cloud Run, Eventarc, Artifact Registry
+  and Cloud Build APIs enabled.
 - `android/app/google-services.json` must exist before building the APK.
-- Ministers must open the app once and grant notification permission.
+- Each phone must open the app **once**, sign in and allow notifications, so a
+  token can be stored on `users/{uid}.fcmTokens`. A phone that has never installed
+  or opened the app cannot be reached by any push service; after that first run
+  notifications arrive whether the app is open, backgrounded or closed.
+- Removing a minister clears their tokens, so they stop receiving pushes.
 
 The in-app inbox works even if push is not configured.
 

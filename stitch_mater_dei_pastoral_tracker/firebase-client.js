@@ -38403,16 +38403,103 @@ function applySessionUI(profile) {
 function isNativeApp() {
   return Capacitor.isNativePlatform();
 }
+var backExitArmedAt = 0;
+function isHomeScreen() {
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "" || /\/index\.html$/.test(path);
+}
+function topOpenOverlay() {
+  const overlays = Array.from(document.querySelectorAll(".fixed.inset-0")).filter(
+    (el) => !el.classList.contains("hidden") && el.getBoundingClientRect().height > 0
+  );
+  return overlays.length ? overlays[overlays.length - 1] : null;
+}
+function closeTopOverlay() {
+  const overlay = topOpenOverlay();
+  if (!overlay) return false;
+  const closer = overlay.querySelector('[data-back-close], [id^="btnClose"], [id^="btnCancel"]');
+  if (closer && !closer.disabled) {
+    closer.click();
+  } else {
+    overlay.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+  }
+  return true;
+}
+function showAppToast(message, timeout = 2200) {
+  if (typeof document === "undefined" || !message) return;
+  let toast = document.getElementById("appToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "appToast";
+    toast.setAttribute("role", "status");
+    toast.style.cssText = [
+      "position:fixed",
+      "left:50%",
+      "transform:translateX(-50%)",
+      "bottom:calc(5.5rem + var(--safe-bottom, 0px))",
+      "max-width:calc(100% - 2rem)",
+      "background:rgba(27,54,93,0.96)",
+      "color:#fff",
+      "font-family:inherit",
+      "font-size:13px",
+      "line-height:1.35",
+      "padding:10px 16px",
+      "border-radius:12px",
+      "box-shadow:0 6px 20px rgba(0,0,0,0.25)",
+      "z-index:9999",
+      "opacity:0",
+      "transition:opacity 180ms ease",
+      "pointer-events:none",
+      "text-align:center"
+    ].join(";");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  void toast.offsetHeight;
+  toast.style.opacity = "1";
+  clearTimeout(showAppToast._timer);
+  showAppToast._timer = setTimeout(() => {
+    toast.style.opacity = "0";
+  }, timeout);
+}
+function initBackButton() {
+  if (!isNativeApp() || typeof document === "undefined" || !document.body) return;
+  if (document.body.dataset.backButton === "on") return;
+  document.body.dataset.backButton = "on";
+  App.addListener("backButton", ({ canGoBack }) => {
+    handleNativeBack(canGoBack);
+  });
+}
+function handleNativeBack(canGoBack = false) {
+  if (closeTopOverlay()) return "overlay";
+  if (canGoBack) {
+    window.history.back();
+    return "history";
+  }
+  if (!isHomeScreen()) {
+    window.location.replace(appUrl("index.html"));
+    return "home";
+  }
+  const now = Date.now();
+  if (now - backExitArmedAt < 2e3) {
+    backExitArmedAt = 0;
+    try {
+      const result = App.exitApp();
+      if (result && typeof result.catch === "function") result.catch(() => {
+      });
+    } catch (err) {
+      console.warn("Could not close the app:", err);
+    }
+    return "exit";
+  }
+  backExitArmedAt = now;
+  showAppToast("Press back again to exit");
+  return "armed";
+}
 async function initNativeShell() {
   initAutoHideBottomNav();
-  if (!isNativeApp()) return;
-  App.addListener("backButton", ({ canGoBack }) => {
-    if (canGoBack || window.history.length > 1) {
-      window.history.back();
-    } else {
-      App.exitApp();
-    }
-  });
+  initBackButton();
 }
 function initAutoHideBottomNav() {
   const nav = document.querySelector("nav.fixed.bottom-0");
@@ -38470,10 +38557,14 @@ async function styleSystemBars() {
   }
 }
 if (typeof window !== "undefined") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", styleSystemBars, { once: true });
-  } else {
+  const boot = () => {
     styleSystemBars();
+    initBackButton();
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
   }
 }
 async function registerPushNotifications(user) {
@@ -38501,6 +38592,14 @@ async function registerPushNotifications(user) {
         visibility: 1,
         vibration: true
       });
+      await PushNotifications.createChannel({
+        id: "parish_route",
+        name: "Route updates",
+        description: "Sunday route changes made by the parish office",
+        importance: 4,
+        visibility: 1,
+        vibration: true
+      });
     } catch (channelError) {
       console.warn("Notification channel:", channelError);
     }
@@ -38523,7 +38622,16 @@ async function registerPushNotifications(user) {
         window.location.href = appUrl("admin_sunday_visit_roster/code.html#requests");
         return;
       }
+      if (type === "route") {
+        window.location.href = appUrl("minister_sunday_route_map/code.html");
+        return;
+      }
       window.location.href = appUrl("messages/code.html");
+    });
+    PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      const title = notification?.title || "Parish update";
+      const body = notification?.body || "";
+      showAppToast(body ? `${title}: ${body}` : title);
     });
     await PushNotifications.register();
     localStorage.setItem("pushEnabled", "1");
@@ -39103,7 +39211,9 @@ export {
   getPendingChangeRequests,
   getUserProfile,
   getVisitsForParishioner,
+  handleNativeBack,
   initAutoHideBottomNav,
+  initBackButton,
   initNativeShell,
   initials,
   isNativeApp,
@@ -39132,6 +39242,7 @@ export {
   serverTimestamp,
   setDoc,
   setMinisterActive,
+  showAppToast,
   signIn,
   signOutSession,
   signOutUser,
