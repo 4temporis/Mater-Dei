@@ -98,7 +98,7 @@
     <section id="tab-ministers" class="tab-panel hidden space-y-3">
       <div>
         <h2 class="font-serif text-lg font-bold text-primary">Eucharistic Ministers</h2>
-        <p class="text-xs text-on-surface-variant">Invite ministers, review their accounts and pause access when needed.</p>
+        <p class="text-xs text-on-surface-variant">Invite ministers, edit an account, pause access or remove someone from the parish.</p>
       </div>
 
       <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-4 space-y-3">
@@ -122,7 +122,7 @@
       </div>
 
       <div>
-        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2">Active accounts</h3>
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2">Active accounts · ministers and administrators</h3>
         <div id="ministerList" class="space-y-2.5">
           <div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">Loading ministers…</div>
         </div>
@@ -339,6 +339,65 @@
     </div>
   </div>
 
+  <!-- Minister modal -->
+  <div id="ministerModal" class="hidden fixed inset-0 z-50 bg-black/40 safe-modal overflow-y-auto">
+    <div class="max-w-xl mx-auto my-4 bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="sticky top-0 bg-white border-b border-parchment-outline px-4 py-3 flex items-center justify-between">
+        <h2 id="ministerModalTitle" class="font-serif text-base font-bold text-primary">Edit minister</h2>
+        <button id="btnCloseMinisterModal" type="button" class="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="ministerForm" class="p-4 space-y-3">
+        <div class="rounded-lg bg-parchment-container px-3 py-2">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant">Sign-in email</p>
+          <p id="mEmail" class="text-sm font-semibold text-primary break-all">-</p>
+          <p class="text-[10px] text-on-surface-variant mt-0.5">Only the minister can change their sign-in email. Send a password reset if they are locked out.</p>
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold text-on-surface-variant">Full name *</label>
+          <input id="mName" required class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Mobile number</label>
+            <input id="mPhone" type="tel" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Care team</label>
+            <input id="mTeam" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-on-surface-variant">Role</label>
+            <select id="mRole" class="w-full rounded-lg border border-parchment-outline bg-parchment-container px-3 py-2.5 text-sm focus:border-primary focus:ring-primary">
+              <option value="minister">Minister</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <div class="flex items-end pb-2">
+            <label class="flex items-center gap-2 text-sm text-on-surface">
+              <input id="mActive" type="checkbox" class="rounded border-parchment-outline text-primary focus:ring-primary" />
+              Access active
+            </label>
+          </div>
+        </div>
+        <p id="ministerSelfNote" class="hidden text-[11px] text-secondary">You cannot change your own role or pause your own access from here.</p>
+        <button id="btnResetMinisterPassword" type="button" class="w-full h-10 rounded-lg border border-parchment-outline text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition">
+          <span class="material-symbols-outlined text-base">lock_reset</span>Send password reset email
+        </button>
+        <p class="text-[11px] text-on-surface-variant">Removing a minister (bin icon on their card) revokes access and unassigns their parishioners.</p>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btnCancelMinisterModal" class="flex-1 h-11 rounded-lg border border-parchment-outline text-on-surface-variant text-sm font-semibold">Cancel</button>
+          <button type="submit" id="btnSaveMinister" class="flex-1 h-11 rounded-lg bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-lg">save</span>Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <nav class="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-parchment-outline shadow-[0_-4px_16px_rgba(27,54,93,0.06)] safe-bottom">
     <div class="max-w-3xl mx-auto flex items-stretch justify-around px-1 py-1.5">
       <a href="../index.html" class="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container">
@@ -368,8 +427,11 @@
       updateParishioner,
       deleteParishioner,
       assignParishionerMinister,
-      listMinisters,
+      listParishAccounts,
       setMinisterActive,
+      updateMinisterAccount,
+      deleteMinisterAccount,
+      resetPassword,
       createInvite,
       listInvites,
       deleteInvite,
@@ -399,6 +461,8 @@
     let invites = [];
     let sentMessages = [];
     let changeRequests = [];
+    let editingMinisterId = '';
+    let accounts = [];
 
     function showToast(message, isError = false) {
       const toast = document.getElementById('toast');
@@ -562,6 +626,62 @@
 
     document.getElementById('btnAddParishioner').addEventListener('click', () => openParishionerModal());
     document.getElementById('btnRefreshRequests').addEventListener('click', loadChangeRequests);
+    document.getElementById('btnCloseMinisterModal').addEventListener('click', closeMinisterModal);
+    document.getElementById('btnCancelMinisterModal').addEventListener('click', closeMinisterModal);
+
+    document.getElementById('btnResetMinisterPassword').addEventListener('click', async () => {
+      const minister = accounts.find((m) => m.id === editingMinisterId);
+      if (!minister?.email) return;
+      const button = document.getElementById('btnResetMinisterPassword');
+      button.disabled = true;
+      try {
+        await resetPassword(minister.email);
+        showToast(`Password reset email sent to ${minister.email}.`);
+      } catch (err) {
+        console.error(err);
+        showToast('Could not send the reset email.', true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('ministerForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const minister = accounts.find((m) => m.id === editingMinisterId);
+      if (!minister) return;
+
+      const button = document.getElementById('btnSaveMinister');
+      button.disabled = true;
+      button.innerHTML = '<span class="material-symbols-outlined animate-spin text-lg">sync</span>Saving…';
+
+      const displayName = document.getElementById('mName').value.trim();
+      const phone = document.getElementById('mPhone').value.trim();
+      const team = document.getElementById('mTeam').value.trim();
+      const role = document.getElementById('mRole').value;
+      const active = document.getElementById('mActive').checked;
+
+      try {
+        if (minister.id === session.user.uid && (role !== minister.role || !active)) {
+          throw new Error('You cannot change your own role or pause your own access.');
+        }
+        await updateMinisterAccount(minister.id, { displayName, phone, team, role, active });
+        Object.assign(minister, { displayName, phone, team, role, active });
+        closeMinisterModal();
+        deriveMinisters();
+        renderMinisters();
+        renderParishioners();
+        loadStats();
+        showToast(role === 'admin' && minister.id !== session.user.uid
+          ? `${displayName} now has administrator access.`
+          : 'Minister details saved.');
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Could not save the minister details.', true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<span class="material-symbols-outlined text-lg">save</span>Save';
+      }
+    });
     document.getElementById('btnCloseModal').addEventListener('click', closeParishionerModal);
     document.getElementById('btnCancelModal').addEventListener('click', closeParishionerModal);
     ['input', 'change', 'search', 'keyup'].forEach((eventName) => {
@@ -627,27 +747,55 @@
     // Ministers and invites
     // -----------------------------------------------------------------------
 
+    function sortAccounts() {
+      accounts.sort((a, b) => {
+        const adminRank = (a.role === 'admin' ? 0 : 1) - (b.role === 'admin' ? 0 : 1);
+        if (adminRank) return adminRank;
+        return (a.displayName || '').localeCompare(b.displayName || '');
+      });
+    }
+
+    // `ministers` drives the assignment pickers, so it only ever holds accounts
+    // that can actually receive parishioners (role minister, not removed).
+    function deriveMinisters() {
+      sortAccounts();
+      ministers = accounts.filter((m) => m.role !== 'admin');
+    }
+
     function renderMinisters() {
       const list = document.getElementById('ministerList');
-      if (!ministers.length) {
-        list.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">No minister accounts yet. Generate an invitation code above.</div>';
+      if (!accounts.length) {
+        list.innerHTML = '<div class="bg-white rounded-xl p-6 text-center text-sm text-on-surface-variant border border-parchment-outline">No minister or administrator accounts yet. Generate an invitation code above.</div>';
       } else {
-        list.innerHTML = ministers.map((m) => `
+        list.innerHTML = accounts.map((m) => `
           <div class="bg-white rounded-xl border border-parchment-outline shadow-sm p-3.5 flex items-start justify-between gap-2">
             <div class="flex items-start gap-2.5 min-w-0">
               <div class="w-9 h-9 rounded-full bg-[#eef1f9] text-primary flex items-center justify-center font-bold text-xs shrink-0">
                 ${escapeHtml((m.displayName || m.email || 'M')[0].toUpperCase())}
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-primary truncate">${escapeHtml(m.displayName || 'Unnamed minister')}</p>
+                <div class="flex items-center gap-1.5">
+                  <p class="text-sm font-semibold text-primary truncate">${escapeHtml(m.displayName || 'Unnamed minister')}</p>
+                  ${m.role === 'admin' ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed whitespace-nowrap">Admin</span>' : ''}
+                </div>
                 <p class="text-[11px] text-on-surface-variant truncate">${escapeHtml(m.email || '')}</p>
                 <p class="text-[10px] text-outline truncate">${escapeHtml([m.phone, m.team].filter(Boolean).join(' · ') || 'No extra details')}</p>
               </div>
             </div>
-            <button data-toggle-id="${escapeHtml(m.id)}" data-active="${m.active !== false}"
-              class="text-[10px] font-bold px-2 py-1.5 rounded-lg whitespace-nowrap ${m.active !== false ? 'bg-tertiary-fixed text-tertiary' : 'bg-error-container text-on-error-container'}">
-              ${m.active !== false ? 'Active' : 'Paused'}
-            </button>
+            <div class="flex flex-col items-end gap-1.5 shrink-0">
+              <button data-toggle-id="${escapeHtml(m.id)}" data-active="${m.active !== false}"
+                class="text-[10px] font-bold px-2 py-1.5 rounded-lg whitespace-nowrap ${m.active !== false ? 'bg-tertiary-fixed text-tertiary' : 'bg-error-container text-on-error-container'}">
+                ${m.active !== false ? 'Active' : 'Paused'}
+              </button>
+              <div class="flex items-center gap-1">
+                <button data-edit-minister="${escapeHtml(m.id)}" class="w-7 h-7 rounded-md hover:bg-surface-container text-primary flex items-center justify-center" title="Edit minister details">
+                  <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+                <button data-delete-minister="${escapeHtml(m.id)}" class="w-7 h-7 rounded-md hover:bg-error-container text-error flex items-center justify-center" title="Remove minister">
+                  <span class="material-symbols-outlined text-base">person_remove</span>
+                </button>
+              </div>
+            </div>
           </div>`).join('');
 
         list.querySelectorAll('[data-toggle-id]').forEach((button) => {
@@ -656,7 +804,7 @@
             const active = button.dataset.active === 'true';
             try {
               await setMinisterActive(id, !active);
-              const minister = ministers.find((m) => m.id === id);
+              const minister = accounts.find((m) => m.id === id);
               if (minister) minister.active = !active;
               renderMinisters();
               showToast(active ? 'Minister access paused.' : 'Minister access restored.');
@@ -667,6 +815,20 @@
             }
           });
         });
+
+        list.querySelectorAll('[data-edit-minister]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const minister = accounts.find((m) => m.id === button.dataset.editMinister);
+            if (minister) openMinisterModal(minister);
+          });
+        });
+
+        list.querySelectorAll('[data-delete-minister]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const minister = accounts.find((m) => m.id === button.dataset.deleteMinister);
+            if (minister) removeMinister(minister, button);
+          });
+        });
       }
 
       const recipient = document.getElementById('messageRecipient');
@@ -674,6 +836,61 @@
         .filter((m) => m.active !== false)
         .map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.displayName || m.email || 'Minister')}</option>`)
         .join('');
+    }
+
+    function openMinisterModal(minister) {
+      editingMinisterId = minister.id;
+      const self = minister.id === session.user.uid;
+      document.getElementById('ministerModalTitle').textContent = `Edit ${minister.displayName || 'minister'}`;
+      document.getElementById('mName').value = minister.displayName || '';
+      document.getElementById('mEmail').textContent = minister.email || 'No sign-in email on record';
+      document.getElementById('mPhone').value = minister.phone || '';
+      document.getElementById('mTeam').value = minister.team || '';
+      document.getElementById('mRole').value = minister.role === 'admin' ? 'admin' : 'minister';
+      document.getElementById('mRole').disabled = self;
+      document.getElementById('mActive').checked = minister.active !== false;
+      document.getElementById('mActive').disabled = self;
+      document.getElementById('ministerSelfNote').classList.toggle('hidden', !self);
+      document.getElementById('btnResetMinisterPassword').disabled = !minister.email;
+      document.getElementById('ministerModal').classList.remove('hidden');
+    }
+
+    function closeMinisterModal() {
+      document.getElementById('ministerModal').classList.add('hidden');
+      editingMinisterId = '';
+    }
+
+    async function removeMinister(minister, button) {
+      if (minister.id === session.user.uid) {
+        showToast('You cannot remove your own administrator account.', true);
+        return;
+      }
+      const label = minister.displayName || minister.email || 'this minister';
+      const isAdmin = minister.role === 'admin';
+      const confirmed = window.confirm(
+        isAdmin
+          ? `Remove administrator ${label}?\n\nThis revokes their access immediately and unassigns every parishioner assigned to them.`
+          : `Remove ${label}?\n\nThis revokes their access immediately and unassigns every parishioner assigned to them.`
+      );
+      if (!confirmed) return;
+
+      button.disabled = true;
+      try {
+        const unassigned = await deleteMinisterAccount(minister.id, { deletedBy: session.user.uid });
+        accounts = accounts.filter((m) => m.id !== minister.id);
+        deriveMinisters();
+        renderMinisters();
+        showToast(unassigned
+          ? `${label} removed. ${unassigned} parishioner${unassigned === 1 ? '' : 's'} unassigned.`
+          : `${label} removed.`);
+        await loadParishioners();
+        loadStats();
+      } catch (err) {
+        console.error(err);
+        showToast('Could not remove this minister.', true);
+      } finally {
+        button.disabled = false;
+      }
     }
 
     function renderInvites() {
@@ -973,7 +1190,8 @@
     }
 
     async function loadMinisters() {
-      ministers = await listMinisters();
+      accounts = await listParishAccounts();
+      deriveMinisters();
       renderMinisters();
     }
 

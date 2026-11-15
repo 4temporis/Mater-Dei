@@ -812,6 +812,7 @@ export async function listMinisters() {
   const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'minister')));
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((minister) => minister.deleted !== true)
     .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
 }
 
@@ -820,8 +821,79 @@ export async function listAllUsers() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+/**
+ * Everyone who can sign into this parish: ministers plus administrators.
+ * Used by the Admin Console so an administrator can be edited or demoted again.
+ */
+export async function listParishAccounts() {
+  const users = await listAllUsers();
+  return users
+    .filter((user) => (user.role === 'minister' || user.role === 'admin') && user.deleted !== true)
+    .sort((a, b) => {
+      const adminRank = (a.role === 'admin' ? 0 : 1) - (b.role === 'admin' ? 0 : 1);
+      if (adminRank) return adminRank;
+      return (a.displayName || '').localeCompare(b.displayName || '');
+    });
+}
+
 export async function setMinisterActive(uid, active) {
   await updateDoc(doc(db, 'users', uid), { active: !!active, updatedAt: serverTimestamp() });
+}
+
+/**
+ * Parish-office edit of a minister account. Only admins pass the Firestore
+ * rules, so calling this as a minister fails server-side.
+ */
+export async function updateMinisterAccount(uid, data = {}) {
+  if (!uid) throw new Error('No minister was selected.');
+  const displayName = String(data.displayName || '').trim();
+  if (!displayName) throw new Error('A minister name is required.');
+  await updateDoc(doc(db, 'users', uid), {
+    displayName,
+    phone: String(data.phone || '').trim(),
+    team: String(data.team || '').trim(),
+    role: data.role === 'admin' ? 'admin' : 'minister',
+    active: data.active !== false,
+    updatedAt: serverTimestamp()
+  });
+}
+
+/**
+ * Removes a minister from the parish:
+ *  - every parishioner assigned to them becomes unassigned
+ *  - the profile is deactivated and its personal details are cleared
+ *  - the sign-in account can no longer read or write anything (rules check
+ *    `active != false`), and the sign-in page refuses it
+ *
+ * The Firebase Authentication record itself can only be deleted with the Admin
+ * SDK; run `node scripts/delete-minister.js <uid>` from the parish computer to
+ * purge the email/password record entirely.
+ *
+ * Returns the number of parishioners that were unassigned.
+ */
+export async function deleteMinisterAccount(uid, { deletedBy = '' } = {}) {
+  if (!uid) throw new Error('No minister was selected.');
+
+  const assignedSnap = await getDocs(
+    query(collection(db, 'parishioners'), where('assignedMinisterId', '==', uid))
+  );
+  const assigned = assignedSnap.docs.map((d) => d.id);
+  await Promise.all(assigned.map((id) => assignParishionerMinister(id, '', '')));
+
+  await updateDoc(doc(db, 'users', uid), {
+    active: false,
+    deleted: true,
+    displayName: 'Removed minister',
+    email: '',
+    phone: '',
+    team: '',
+    fcmTokens: [],
+    deletedAt: serverTimestamp(),
+    deletedBy,
+    updatedAt: serverTimestamp()
+  });
+
+  return assigned.length;
 }
 
 export async function updateOwnProfile(uid, data) {

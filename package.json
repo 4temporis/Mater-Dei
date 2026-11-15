@@ -13,6 +13,7 @@
     "android:release": "cd android && gradlew.bat assembleRelease",
     "apk": "npm run cap:sync && npm run android:debug",
     "admin:create": "node scripts/create-admin.js",
+    "minister:delete": "node scripts/delete-minister.js",
     "firebase:setup": "node scripts/setup-firebase.js",
     "firebase:deploy-config": "node scripts/deploy-firebase-config.js",
     "functions:install": "cd functions && npm install",

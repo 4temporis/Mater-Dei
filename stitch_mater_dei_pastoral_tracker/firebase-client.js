@@ -38799,14 +38799,56 @@ async function withdrawChangeRequest(requestId) {
 }
 async function listMinisters() {
   const snap = await getDocs(query(collection(db, "users"), where("role", "==", "minister")));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b2) => (a.displayName || "").localeCompare(b2.displayName || ""));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((minister) => minister.deleted !== true).sort((a, b2) => (a.displayName || "").localeCompare(b2.displayName || ""));
 }
 async function listAllUsers() {
   const snap = await getDocs(collection(db, "users"));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
+async function listParishAccounts() {
+  const users = await listAllUsers();
+  return users.filter((user) => (user.role === "minister" || user.role === "admin") && user.deleted !== true).sort((a, b2) => {
+    const adminRank = (a.role === "admin" ? 0 : 1) - (b2.role === "admin" ? 0 : 1);
+    if (adminRank) return adminRank;
+    return (a.displayName || "").localeCompare(b2.displayName || "");
+  });
+}
 async function setMinisterActive(uid, active) {
   await updateDoc(doc(db, "users", uid), { active: !!active, updatedAt: serverTimestamp() });
+}
+async function updateMinisterAccount(uid, data = {}) {
+  if (!uid) throw new Error("No minister was selected.");
+  const displayName = String(data.displayName || "").trim();
+  if (!displayName) throw new Error("A minister name is required.");
+  await updateDoc(doc(db, "users", uid), {
+    displayName,
+    phone: String(data.phone || "").trim(),
+    team: String(data.team || "").trim(),
+    role: data.role === "admin" ? "admin" : "minister",
+    active: data.active !== false,
+    updatedAt: serverTimestamp()
+  });
+}
+async function deleteMinisterAccount(uid, { deletedBy = "" } = {}) {
+  if (!uid) throw new Error("No minister was selected.");
+  const assignedSnap = await getDocs(
+    query(collection(db, "parishioners"), where("assignedMinisterId", "==", uid))
+  );
+  const assigned = assignedSnap.docs.map((d) => d.id);
+  await Promise.all(assigned.map((id) => assignParishionerMinister(id, "", "")));
+  await updateDoc(doc(db, "users", uid), {
+    active: false,
+    deleted: true,
+    displayName: "Removed minister",
+    email: "",
+    phone: "",
+    team: "",
+    fcmTokens: [],
+    deletedAt: serverTimestamp(),
+    deletedBy,
+    updatedAt: serverTimestamp()
+  });
+  return assigned.length;
 }
 async function updateOwnProfile(uid, data) {
   await updateDoc(doc(db, "users", uid), {
@@ -39039,6 +39081,7 @@ export {
   deleteDoc,
   deleteInvite,
   deleteMessage,
+  deleteMinisterAccount,
   deleteParishioner,
   digitsOnly,
   doc,
@@ -39069,6 +39112,7 @@ export {
   listChangeRequests,
   listInvites,
   listMinisters,
+  listParishAccounts,
   mapsUrl,
   markAllMessagesRead,
   markMessageRead,
@@ -39100,6 +39144,7 @@ export {
   toDateInputValue,
   unreadMessages,
   updateDoc,
+  updateMinisterAccount,
   updateOwnProfile,
   updateParishioner,
   visitsToday,

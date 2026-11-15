@@ -196,6 +196,40 @@ The `changeRequests` rules in `firestore.rules` restrict creation to the
 signed-in minister and updates to admins; deploy them with
 `firebase deploy --only firestore:rules`.
 
+### Managing ministers and administrators
+
+Admins can change both kinds of record without leaving the console.
+
+**Parishioners.** Admin Console → **People** → pencil icon (name, age, status,
+guild, sector, phone, assignment, address, gate code, access notes, dietary,
+mobility, prayer intentions, notes) or the bin icon to delete. Tapping a name
+opens the full record, where every field including sacraments is editable and
+**Save parishioner record** writes directly.
+
+**Ministers.** Admin Console → **Ministers** lists every sign-in account
+(ministers first, administrators flagged with an **Admin** badge). Each card has:
+
+- the **Active/Paused** chip – immediately grants or blocks access;
+- the pencil icon – edit full name, mobile number, care team, role
+  (Minister/Administrator) and access state, or send a password-reset email;
+- the **person_remove** icon – remove the minister from the parish.
+
+Removing a minister is a soft delete done entirely in the client:
+`deleteMinisterAccount()` unassigns every parishioner assigned to them, then
+clears the profile (name, email, phone, team, push tokens) and sets
+`active: false` + `deleted: true`. Access is revoked instantly and the account
+disappears from the minister list. To purge the Firebase Authentication record
+(email and password) as well, run the Admin SDK script from the parish computer:
+
+```powershell
+npm run minister:delete -- --list
+npm run minister:delete -- --email former-minister@example.org --yes
+```
+
+Add `--force` if the account is an administrator. Without `--yes` the script
+only reports what it would delete. An admin cannot remove, demote or pause their
+own account from the console, so the parish always keeps one way in.
+
 ## Push notifications (optional)
 
 Push notifications use Firebase Cloud Messaging through the `notifyMinisters`
@@ -240,6 +274,7 @@ than relying on custom claims.
 | `npm run firebase:setup`         | Register the Android app and download config   |
 | `npm run firebase:deploy-config` | Deploy Firestore rules and indexes             |
 | `npm run admin:create`           | Create/reset the admin login                   |
+| `npm run minister:delete`        | Purge a removed minister's Auth account        |
 | `npm run inspect`                | Print the current Firestore/Auth state         |
 | `npm run check:pages`            | Syntax-check pages and local asset references  |
 

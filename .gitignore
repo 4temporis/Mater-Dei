@@ -31,3 +31,5 @@ skills-lock.json
 # OS files
 Thumbs.db
 .DS_Store
+# Standalone Play Store edition (own project, kept out of the parish app repo)
+play-store/
